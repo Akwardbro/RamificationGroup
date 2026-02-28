@@ -15,16 +15,20 @@ noncomputable def inertiaDeg : ℕ := Ideal.inertiaDeg (maximalIdeal A) (maximal
 
 variable {A B}
 
-theorem algebraMap_residue_compat : (residue B).comp (algebraMap A B) = (algebraMap (ResidueField A) (ResidueField B)).comp (residue A) := LocalRing.ResidueField.map_comp_residue (algebraMap A B)
+theorem algebraMap_residue_compat :
+    (residue B).comp (algebraMap A B) =
+      (algebraMap (ResidueField A) (ResidueField B)).comp (residue A) :=
+  (IsLocalRing.ResidueField.map_comp_residue (algebraMap A B)).symm
 
-theorem residue_irreducible_eq_zero {ϖ : A} (h : Irreducible ϖ) : residue A ϖ = 0 := Ideal.Quotient.eq_zero_iff_mem.mpr ((LocalRing.mem_maximalIdeal _).mpr h.not_unit)
+theorem residue_irreducible_eq_zero {ϖ : A} (h : Irreducible ϖ) : residue A ϖ = 0 := by
+  exact (IsLocalRing.residue_eq_zero_iff ϖ).2 ((IsLocalRing.mem_maximalIdeal _).2
+    (mem_nonunits_iff.2 h.not_isUnit))
 
 theorem is_unit_iff_residue_ne_zero {x : A} : IsUnit x ↔ residue A x ≠ 0 := by
-  rw [← isUnit_map_iff (residue A), isUnit_iff_ne_zero]
+  exact (IsLocalRing.residue_ne_zero_iff_isUnit x).symm
 
 theorem residue_eq_add_irreducible {x ϖ : A} (h : Irreducible ϖ) : residue A x = residue A (x + ϖ) := by
-  rw [RingHom.map_add, self_eq_add_right, residue_irreducible_eq_zero]
-  exact h
+  simpa [RingHom.map_add, residue_irreducible_eq_zero h]
 
 theorem is_unit_of_unit_add_nonunit {x y : A} (hx : IsUnit x) (hy : y ∈ nonunits A) : IsUnit (x + y) := by
   rw [eq_add_neg_iff_add_eq.mpr (show x + y = x + y by rfl)] at hx

@@ -84,8 +84,10 @@ theorem RingHom.restrictValuationSubring_apply {f : K →+* L} (hf : vK.v.IsEqui
 def AlgHom.restrictValuationSubring {f : K →ₐ[R] L} (hf : vK.v.IsEquiv (vL.v.comap f)) : 𝒪[K] →ₐ[𝒪[R]] 𝒪[L] := {
   RingHom.restrictValuationSubring hf with
   commutes' := by
-    intro; ext; simp only [RingHom.toMonoidHom_eq_coe, OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe,
-      MonoidHom.coe_coe, RingHom.restrictValuationSubring_apply, IsValExtension.val_algebraMap, RingHom.coe_coe, AlgHom.commutes]
+    intro r
+    ext
+    change f ((algebraMap R K) (r : R)) = (algebraMap R L) (r : R)
+    simpa using f.commutes (r : R)
 }
 
 @[simp]
@@ -109,10 +111,8 @@ def DecompositionGroup.restrictValuationSubring (s : decompositionGroup K L) :
   invFun := (AlgHom.restrictValuationSubring (f := (s⁻¹.1 : L →ₐ[K] L)) (by convert s⁻¹.2))
   left_inv := by
     intro x; ext; simp
-    convert AlgEquiv.symm_apply_apply _ _
   right_inv := by
     intro x; ext; simp
-    convert AlgEquiv.apply_symm_apply _ _
   }
 
 @[simp]
@@ -133,10 +133,8 @@ def DecompositionGroup.restrictValuationSubring' {s : L ≃ₐ[K] L}
   invFun := (AlgHom.restrictValuationSubring (f := ((s⁻¹ : L ≃ₐ[K] L) : L →ₐ[K] L)) (by convert (⟨s, h⟩ : decompositionGroup K L)⁻¹.2))
   left_inv := by
     intro x; ext; simp
-    convert AlgEquiv.symm_apply_apply _ _
   right_inv := by
     intro x; ext; simp
-    convert AlgEquiv.apply_symm_apply _ _
   }
 
 @[simp]

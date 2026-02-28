@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Jiedong Jiang, Bichang Lei
 -/
 import Mathlib.Topology.Algebra.Valued.ValuedField
-import Mathlib.RingTheory.Valuation.ValExtension
+import Mathlib.RingTheory.Valuation.Extension
 -- import Mathlib.Topology.Algebra.Valued.ValuedField
 
 /-!
@@ -32,6 +32,51 @@ Valued, Valuation, Extension of Valuation
 
 -/
 open Valued Valuation
+
+abbrev IsValExtension {R A : Type*} {ΓR ΓA : Type*} [CommRing R] [Ring A]
+    [LinearOrderedCommGroupWithZero ΓR] [LinearOrderedCommGroupWithZero ΓA]
+    [Algebra R A] (vR : Valuation R ΓR) (vA : Valuation A ΓA) : Prop :=
+  vR.HasExtension vA
+
+namespace IsValExtension
+
+variable {R A : Type*} {ΓR ΓA : Type*} [CommRing R] [Ring A]
+    [LinearOrderedCommGroupWithZero ΓR] [LinearOrderedCommGroupWithZero ΓA]
+    [Algebra R A] {vR : Valuation R ΓR} {vA : Valuation A ΓA}
+    [IsValExtension vR vA]
+
+theorem val_isEquiv_comap : vR.IsEquiv <| vA.comap (algebraMap R A) :=
+  Valuation.HasExtension.val_isEquiv_comap (vR := vR) (vA := vA)
+
+theorem val_map_le_iff (x y : R) :
+    vA (algebraMap R A x) ≤ vA (algebraMap R A y) ↔ vR x ≤ vR y :=
+  Valuation.HasExtension.val_map_le_iff (vR := vR) (vA := vA) x y
+
+theorem val_map_lt_iff (x y : R) :
+    vA (algebraMap R A x) < vA (algebraMap R A y) ↔ vR x < vR y :=
+  Valuation.HasExtension.val_map_lt_iff (vR := vR) (vA := vA) x y
+
+theorem val_map_eq_iff (x y : R) :
+    vA (algebraMap R A x) = vA (algebraMap R A y) ↔ vR x = vR y :=
+  Valuation.HasExtension.val_map_eq_iff (vR := vR) (vA := vA) x y
+
+theorem val_map_le_one_iff (x : R) : vA (algebraMap R A x) ≤ 1 ↔ vR x ≤ 1 :=
+  Valuation.HasExtension.val_map_le_one_iff (vR := vR) (vA := vA) x
+
+theorem val_map_lt_one_iff (x : R) : vA (algebraMap R A x) < 1 ↔ vR x < 1 :=
+  Valuation.HasExtension.val_map_lt_one_iff (vR := vR) (vA := vA) x
+
+theorem val_map_eq_one_iff (x : R) : vA (algebraMap R A x) = 1 ↔ vR x = 1 :=
+  Valuation.HasExtension.val_map_eq_one_iff (vR := vR) (vA := vA) x
+
+@[simp, norm_cast]
+theorem val_algebraMap {K : Type*} {ΓK : Type*} [Field K]
+    [LinearOrderedCommGroupWithZero ΓK]
+    [Algebra K A] {vK : Valuation K ΓK} [IsValExtension vK vA] (r : vK.integer) :
+    ((algebraMap vK.integer vA.integer) r : A) = (algebraMap K A) (r : K) :=
+  Valuation.HasExtension.val_algebraMap (vR := vK) (vA := vA) r
+
+end IsValExtension
 
 namespace Valued
 

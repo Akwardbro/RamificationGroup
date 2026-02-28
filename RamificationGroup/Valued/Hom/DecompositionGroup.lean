@@ -47,8 +47,7 @@ variable {K L : Type*} [Field K] [Field L] [vK : Valued K ℤₘ₀] [IsDiscrete
 theorem decompositionGroup_eq_top [IsValExtension vK.v vL.v] [CompleteSpace K] : decompositionGroup K L = ⊤ := by
   rw [Subgroup.eq_top_iff']
   intro f
-  unfold decompositionGroup
-  rw [Subgroup.mem_mk, Set.mem_setOf_eq]
+  change vL.v.IsEquiv (vL.v.comap f)
   apply algEquiv_preserve_val_of_complete
 
 end eq_top

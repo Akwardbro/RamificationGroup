@@ -1,6 +1,6 @@
 import Mathlib.MeasureTheory.Measure.MeasureSpaceDef
 import Mathlib.Analysis.Calculus.MeanValue
-import Mathlib.MeasureTheory.Integral.FundThmCalculus
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 open Filter Asymptotics
 
@@ -80,36 +80,27 @@ theorem ContinuousOn_inv_aux {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ
 
 theorem HasDerivWithinAt_inv_aux {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f finv f' finv' : ℝ → E} {a b : ℝ} (derivf : ∀ x ∈ Set.Ioc a b, HasDerivWithinAt f (f' x) (Set.Iic x) x) (h : ∀ x : ℝ, f x = finv (-x)) (h' : ∀ x : ℝ, f' x = - finv' (-x)) : ∀ x ∈ Set.Ico (-b) (-a), HasDerivWithinAt finv (finv' x) (Set.Ici x) x := by
   intro x hx
-  dsimp [HasDerivWithinAt, HasDerivAtFilter]
-  haveI h : HasFDerivAtFilter (𝕜 := ℝ) finv (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (finv' x)) x (nhdsWithin x (Set.Ici x)) := {
-    isLittleOTVS := by
-      rw [isLittleOTVS_iff_isLittleO, IsLittleO_def]
-      intro c hc
-      simp only [ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.one_apply]
-      rw [IsBigOWith_def]
-      obtain ⟨k, hk1, hk2⟩ := isLittleO_iff.1 (derivf (-x) ?_).isLittleO hc
-      use -k
-      constructor
-      · rw [← neg_neg x]
-        apply nhds_neg_aux hk1
-      · obtain ⟨t, ht1, ht2⟩ := hk2
-        use -t
-        constructor
-        · rw [mem_principal] at *
-          have h' : Set.Ici x = - (Set.Iic (-x)) := by simp only [Set.neg_Iic, neg_neg]
-          rw [h', Set.neg_subset_neg]
-          exact ht1
-        · rw [← Set.inter_neg, ← ht2]
-          ext t
-          simp only [_root_.map_sub, ContinuousLinearMap.smulRight_apply,
-            ContinuousLinearMap.one_apply, Real.norm_eq_abs, Set.mem_setOf_eq, sub_neg_eq_add,
-            _root_.map_add, Set.mem_neg, neg_smul, h (-t), h (-x), h' (-x), neg_neg]
-          simp only [smul_neg, neg_neg, ← sub_eq_add_neg]
-          rw [← abs_neg, neg_sub, neg_add_eq_sub, sub_smul]
-  }
-  rw [← Set.neg_Ioc a b] at hx
-  exact hx
-  exact h
+  have hx' : -x ∈ Set.Ioc a b := by
+    rcases hx with ⟨hx1, hx2⟩
+    constructor <;> linarith
+  have hmaps : Set.MapsTo (fun t : ℝ => -t) (Set.Ici x) (Set.Iic (-x)) := by
+    intro t ht
+    exact neg_le_neg (show x ≤ t from ht)
+  have hcomp :
+      HasDerivWithinAt (fun t : ℝ => f (-t)) ((-1 : ℝ) • f' (-x)) (Set.Ici x) x := by
+    simpa [Function.comp] using
+      (HasDerivWithinAt.scomp (x := x) (derivf (-x) hx')
+        (hasDerivWithinAt_neg x (Set.Ici x)) hmaps)
+  have hfun : (fun t : ℝ => f (-t)) = finv := by
+    funext t
+    simpa using (h (-t))
+  have hderiv : ((-1 : ℝ) • f' (-x)) = finv' x := by
+    have hfx : f' (-x) = -finv' x := by simpa [neg_neg] using h' (-x)
+    calc
+      ((-1 : ℝ) • f' (-x)) = -f' (-x) := by simp
+      _ = -(-finv' x) := by rw [hfx]
+      _ = finv' x := by simp
+  simpa [hfun, hderiv] using hcomp
 
 theorem eq_of_has_deriv_left_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E} {a b : ℝ} {f' g : ℝ → E} (derivf : ∀ x ∈ Set.Ioc a b, HasDerivWithinAt f (f' x) (Set.Iic x) x) (derivg : ∀ x ∈ Set.Ioc a b, HasDerivWithinAt g (f' x) (Set.Iic x) x) (fcont : ContinuousOn f (Set.Icc a b)) (gcont : ContinuousOn g (Set.Icc a b)) (hi : f b = g b) (y : ℝ) : y ∈ Set.Icc a b → f y = g y := by
   let finv : ℝ → E := fun x => f (-x)

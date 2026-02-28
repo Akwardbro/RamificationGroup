@@ -3,7 +3,7 @@ import Mathlib.RingTheory.Valuation.Basic
 import Mathlib.FieldTheory.KrullTopology
 import Mathlib.Algebra.Algebra.Tower
 import Mathlib.Analysis.Calculus.MeanValue
-import Mathlib.MeasureTheory.Integral.FundThmCalculus
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import RamificationGroup.HerbrandFunction.Psi
 import RamificationGroup.ForMathlib.AlgEquiv.Basic
 import RamificationGroup.ForMathlib.Unknow
@@ -674,7 +674,7 @@ theorem truncatedJ_eq_trunc_iff_lowerIdx_le_phi {u : ℚ} (hsig : σ ≠ .refl) 
 
 
 variable [Algebra.IsSeparable K K'] [Algebra.IsSeparable K' L] [CompleteSpace K'] [Algebra.IsSeparable ↥𝒪[K'] ↥𝒪[L]] [Normal K' L] [Algebra.IsSeparable (IsLocalRing.ResidueField ↥𝒪[K]) (IsLocalRing.ResidueField ↥𝒪[L])] [Algebra.IsSeparable K K'] [Algebra.IsSeparable (IsLocalRing.ResidueField ↥𝒪[K']) (IsLocalRing.ResidueField ↥𝒪[L])] [Algebra.IsSeparable (IsLocalRing.ResidueField ↥𝒪[K]) (IsLocalRing.ResidueField ↥𝒪[K'])] in
-theorem lemma3_aux' (u : ℚ) (h' : -1 ≤ u) : σ.truncatedLowerIndex K K' (phi K' L u + 1) = (1 / LocalField.ramificationIdx K' L) * (∑ s in (⊤ : Finset (L ≃ₐ[K'] L)), (AlgEquiv.truncatedLowerIndex K L (truncatedJ L (u + 1) σ + 1) (AlgEquiv.restrictScalars K s))) := by
+theorem lemma3_aux' (u : ℚ) (h' : -1 ≤ u) : σ.truncatedLowerIndex K K' (phi K' L u + 1) = (1 / LocalField.ramificationIdx K' L) * (∑ s ∈ (⊤ : Finset (L ≃ₐ[K'] L)), (AlgEquiv.truncatedLowerIndex K L (truncatedJ L (u + 1) σ + 1) (AlgEquiv.restrictScalars K s))) := by
   let x := PowerBasisValExtension K L
   let y := PowerBasisValExtension K K'
   by_cases hsig : σ = .refl
@@ -739,7 +739,7 @@ theorem phi_truncatedJ_sub_one (u : ℚ) (hu : -1 ≤ u) (σ : K' ≃ₐ[K] K') 
   _ = (1 / LocalField.ramificationIdx K' L) * ((Finset.sum (⊤ : Finset (L ≃ₐ[K'] L)) (AlgEquiv.truncatedLowerIndex K' L (truncatedJ L (u + 1) σ + 1) ·))) := by
     congr
     apply RamificationIdx_eq_card_of_inertia_group
-  _ = (1 / LocalField.ramificationIdx K' L) * ((∑ x in (⊤ : Finset (L ≃ₐ[K'] L)), (AlgEquiv.truncatedLowerIndex K L (truncatedJ L (u + 1) σ + 1) (AlgEquiv.restrictScalars K x)))) := by
+  _ = (1 / LocalField.ramificationIdx K' L) * ((∑ x ∈ (⊤ : Finset (L ≃ₐ[K'] L)), (AlgEquiv.truncatedLowerIndex K L (truncatedJ L (u + 1) σ + 1) (AlgEquiv.restrictScalars K x)))) := by
     congr
   _ = σ.truncatedLowerIndex K K' ((phi K' L u) + 1) := by
     rw [lemma3_aux' σ u hu]

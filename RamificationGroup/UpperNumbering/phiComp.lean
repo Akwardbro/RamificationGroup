@@ -134,7 +134,7 @@ theorem phiDerivReal'_comp {u : ℝ} (h : 0 < u) : (phiDerivReal' K' L u) * phiD
 
 #check Int.ceil_eq_add_one_sub_fract
 #check Int.fract
-theorem phiReal_eq_sum_card' {u : ℝ} (hu : 0 < u) : phiReal K L u = (1 / Nat.card G(L/K)_[0]) * ((∑ x in Finset.Icc 1 ⌊u⌋, Nat.card G(L/K)_[x]) + (u - (max 0 ⌊u⌋)) * (Nat.card G(L/K)_[(⌊u⌋ + 1)])) := by
+theorem phiReal_eq_sum_card' {u : ℝ} (hu : 0 < u) : phiReal K L u = (1 / Nat.card G(L/K)_[0]) * ((∑ x ∈ Finset.Icc 1 ⌊u⌋, Nat.card G(L/K)_[x]) + (u - (max 0 ⌊u⌋)) * (Nat.card G(L/K)_[(⌊u⌋ + 1)])) := by
   rw [phiReal_eq_sum_card K L (le_of_lt hu), mul_eq_mul_left_iff]
   left
   by_cases hc : ⌈u⌉ - 1 = ⌊u⌋

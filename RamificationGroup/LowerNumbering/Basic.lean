@@ -1,6 +1,6 @@
 import RamificationGroup.Valued.Hom.Lift
 import RamificationGroup.ForMathlib.Algebra.Algebra.Tower
-import LocalClassFieldTheory.LocalField.Basic
+import Mathlib.NumberTheory.LocalField.Basic
 import RamificationGroup.ForMathlib.Algebra.Algebra.PowerBasis
 import RamificationGroup.Valued.AlgebraicInstances
 import RamificationGroup.Valuation.Extension

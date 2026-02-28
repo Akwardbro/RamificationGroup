@@ -21,17 +21,16 @@ variable {R A : Type*} {ΓR ΓA : outParam Type*} [CommRing R] [Ring A]
 
 variable (R A) in
 theorem nontrivial_of_valExtension  [vR : Valued R ΓR] [IsNontrivial vR.v] [IsValExtension vR.v vA.v] : IsNontrivial vA.v where
-  exists_val_ne_one := by
-    obtain ⟨r, h0, h1⟩ := Valuation.IsNontrivial.exists_val_ne_one (v := vR.v)
-    -- rcases Valuation.IsNontrivial.nontrivial (v := vR.v) with ⟨r, h0, h1⟩
-    use (algebraMap R A) r
-    simp only [ne_eq, IsValExtension.val_map_eq_one_iff, h1, not_false_eq_true, and_true]
-    rw [show (0 : ΓA) = vA.v (0) from (_root_.map_zero _).symm, show (0 : A) = (algebraMap R A) 0 from (_root_.map_zero _).symm, IsValExtension.val_map_eq_iff (vR := vR.v)]
-    simp only [_root_.map_zero, h0, not_false_eq_true, true_and]
-    by_contra hc
-    rw [val_map_eq_one_iff (vR := vR.v)] at hc
-    push_neg at hc
-    apply h1 (hc h0)
+  exists_val_nontrivial := by
+    obtain ⟨r, hr0, hr1⟩ := (inferInstance : IsNontrivial vR.v).exists_val_nontrivial
+    refine ⟨algebraMap R A r, ?_, ?_⟩
+    · intro h
+      exact hr0 <| by
+        have h' := (IsValExtension.val_map_eq_iff (vR := vR.v) (vA := vA.v) r 0).mp (by
+          simpa [map_zero] using h)
+        simpa [map_zero] using h'
+    · intro h
+      exact hr1 <| (IsValExtension.val_map_eq_one_iff (vR := vR.v) (vA := vA.v) r).mp h
 
 
 end nontrivial

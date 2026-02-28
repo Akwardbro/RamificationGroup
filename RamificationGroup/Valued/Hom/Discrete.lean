@@ -2,9 +2,9 @@
 normalize to `integer` or `valuationSubring`?
 -/
 
--- import RamificationGroup.Valued.Hom.ValExtension
-import LocalClassFieldTheory.DiscreteValuationRing.Extensions
+import RamificationGroup.Valued.Hom.ValExtension
 import RamificationGroup.Valuation.Discrete
+import RamificationGroup.Compat.LocalClassFieldTheory.DiscreteValuationExtension
 
 
 open Valuation Valued DiscreteValuation
@@ -42,7 +42,7 @@ theorem eval_lt_one_of_coeff_le_one_of_const_eq_zero_of_lt_one {f : L[X]}
   · rw [hn, h0]
     simp only [pow_zero, mul_one, _root_.map_zero, zero_lt_one]
   · rw [map_mul, map_pow, ← mul_one 1]
-    apply mul_lt_mul_of_lt_of_le₀ (hf n) (one_ne_zero) ((pow_lt_one_iff hn).mpr hx)
+    simpa using mul_lt_one_of_nonneg_of_lt_one_right (hf n) zero_le' ((pow_lt_one_iff hn).mpr hx)
 
 theorem aeval_valuationSubring_lt_one_of_lt_one
     (h : vK.v.IsEquiv <| v.comap (algebraMap K L))
@@ -78,22 +78,17 @@ theorem mem_integer_of_mem_integral_closure (h : vK.v.IsEquiv <| v.comap (algebr
     · simp only [coeff_sub, coeff_zero_reverse, hp.1, Monic.leadingCoeff, coeff_one_zero, sub_self]
     · apply (one_lt_val_iff v xne0).mp vxgt1
   apply ne_of_lt this
+  have hrev : eval₂ (algebraMap (↥𝒪[K]) L) x⁻¹ p.reverse = 0 := by
+    have hrev' : eval₂ (algebraMap (↥𝒪[K]) L) (⅟x) p.reverse = 0 :=
+      (Polynomial.eval₂_reverse_eq_zero_iff (algebraMap (↥𝒪[K]) L) x p).2 hp.2
+    simpa [invOf_eq_inv x] using hrev'
   have : aeval x⁻¹ (p.reverse - 1) = -1 := by
-    rw [← add_neg_eq_zero]
-    ring_nf
-    simp only [_root_.map_add, _root_.map_neg, _root_.map_one, add_neg_cancel_left]
-    rw [← invOf_eq_inv x, aeval_def, Polynomial.eval₂_reverse_eq_zero_iff, hp.2]
+    rw [aeval_def, Polynomial.eval₂_sub, hrev, Polynomial.eval₂_one, zero_sub]
   rw [this, map_neg, map_one]
 
 end Valuation
 
 end non_discrete
-
-/-- Notation for `WithZero (Multiplicative ℕ)` -/
-scoped[DiscreteValuation] notation "ℕₘ₀" => WithZero (Multiplicative ℕ)
-
-/-- Notation for `WithZero (Multiplicative ℤ)` -/
-scoped[DiscreteValuation] notation "ℤₘ₀" => WithZero (Multiplicative ℤ)
 
 variable {K : Type*} [Field K] [vK : Valued K ℤₘ₀]
 variable {L : Type*} [Field L]
@@ -108,14 +103,15 @@ variable [IsDiscrete vK.v] [CompleteSpace K]
 variable {vL : Valuation L ℤₘ₀}
 
 theorem nontrivial_of_valuation_extension (h : vK.v.IsEquiv <| vL.comap (algebraMap K L)) : vL.IsNontrivial := by
-  rcases exists_isUniformizer_of_isDiscrete vK.v with ⟨π, hp⟩
-  use (algebraMap K L) π
-  constructor
-  · apply ne_of_lt
-    rw [← comap_apply, ← (isEquiv_iff_val_lt_one).mp h, hp]
-    decide
-  · rw [← comap_apply, ← IsEquiv.ne_zero h, hp]
-    decide
+  rcases exists_isUniformizer_of_isDiscrete (v := vK.v) with ⟨π, hπ⟩
+  refine ⟨(algebraMap K L) (π : K), ?_, ?_⟩
+  · rw [← comap_apply]
+    have hvk_ne0 : vK.v (π : K) ≠ 0 :=
+      (Valuation.ne_zero_iff (v := vK.v)).2 (isUniformizer_ne_zero (v := vK.v) hπ)
+    exact (Valuation.IsEquiv.eq_zero h).not.mp hvk_ne0
+  · rw [← comap_apply]
+    exact ne_of_lt <| ((Valuation.isEquiv_iff_val_lt_one).mp h).1
+      (isUniformizer_val_lt_one (v := vK.v) hπ)
 
 
 instance : IsIntegralClosure (↥vL.integer) (↥𝒪[K]) L := sorry
@@ -151,10 +147,17 @@ theorem extension_integer_eq_extendedValuation_of_discrete (h : vK.v.IsEquiv <| 
 theorem integral_closure_eq_integer_of_complete_discrete
     (h : vK.v.IsEquiv <| vL.comap (algebraMap K L)) :
   (integralClosure 𝒪[K] L).toSubring = vL.integer := by
-  rw [show integralClosure 𝒪[K] L = integralClosure vK.v.valuationSubring L by rfl,
-    Extension.integralClosure_eq_integer, extension_integer_eq_extendedValuation_of_discrete h]
-  ext
-  rw [ValuationSubring.mem_toSubring, mem_valuationSubring_iff, mem_integer_iff]
+  have hint :
+      (integralClosure vK.v.valuationSubring L).toSubring = (extendedValuation K L).integer := by
+    ext x
+    have hmem :=
+      congrArg (fun S : Subring L => x ∈ S) (Extension.integralClosure_eq_integer (K := K) (L := L))
+    simpa [ValuationSubring.mem_toSubring, mem_valuationSubring_iff, mem_integer_iff] using hmem
+  calc
+    (integralClosure 𝒪[K] L).toSubring = (integralClosure vK.v.valuationSubring L).toSubring := by
+      rfl
+    _ = (extendedValuation K L).integer := hint
+    _ = vL.integer := (extension_integer_eq_extendedValuation_of_discrete h).symm
 
 end int_closure_discrete
 

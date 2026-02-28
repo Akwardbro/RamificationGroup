@@ -29,10 +29,16 @@ instance : IsIntegrallyClosed 𝒪[K] := by
       · apply (one_lt_val_iff v xne0).mp vxgt1
     apply ne_of_lt this
     have : aeval x⁻¹ (p.reverse - 1) = -1 := by
-      rw [← add_neg_eq_zero]
-      ring_nf
-      simp only [_root_.map_add, _root_.map_neg, _root_.map_one, add_neg_cancel_left]
-      rw [← invOf_eq_inv x, aeval_def, Polynomial.eval₂_reverse_eq_zero_iff, hp.2]
+      have hrev' : eval₂ (algebraMap (↥𝒪[K]) K) (⅟x) p.reverse = 0 := by
+        rw [Polynomial.eval₂_reverse_eq_zero_iff]
+        simpa [Polynomial.aeval_def] using hp.2
+      have hrev : eval₂ (algebraMap (↥𝒪[K]) K) x⁻¹ p.reverse = 0 := by
+        simpa [invOf_eq_inv x] using hrev'
+      calc
+        aeval x⁻¹ (p.reverse - 1)
+            = eval₂ (algebraMap (↥𝒪[K]) K) x⁻¹ p.reverse - 1 := by
+              simp [Polynomial.aeval_def]
+        _ = -1 := by simp [hrev]
     rw [this, Valuation.map_neg, Valuation.map_one]
 
 variable [IsDiscrete vK.v]
@@ -66,9 +72,9 @@ instance : IsDiscreteValuationRing 𝒪[K] :=
   inferInstanceAs (IsDiscreteValuationRing vK.v.valuationSubring)
 
 theorem aux6 [CompleteSpace K] : IsDiscreteValuationRing 𝒪[L] :=
-  valuationSubring_DVR_of_equiv_discrete
-    (extension_valuation_equiv_extendedValuation_of_discrete
-      (IsValExtension.val_isEquiv_comap (R := K) (A := L)))
+  by
+    letI : IsNontrivial vL.v := nontrivial_of_valExtension K L
+    simpa using (inferInstance : IsDiscreteValuationRing vL.v.valuationSubring)
 
 /-- Can't be inferred automatically. -/
 instance [CompleteSpace K] [Algebra.IsSeparable K L] : IsNoetherian 𝒪[K] 𝒪[L] :=
@@ -81,7 +87,7 @@ set_option maxHeartbeats 0
 noncomputable def PowerBasisValExtension [CompleteSpace K] [Algebra.IsSeparable K L] [Algebra.IsSeparable (IsLocalRing.ResidueField 𝒪[K]) (IsLocalRing.ResidueField 𝒪[L])] : PowerBasis 𝒪[K] 𝒪[L] :=
   letI : IsNontrivial vL.v := nontrivial_of_valExtension K L
   letI : IsDiscreteValuationRing 𝒪[L] := aux6 K L
-  PowerBasisExtDVR (algebraMap_injective)
+  PowerBasisExtDVR (Valuation.HasExtension.algebraMap_injective (vK := vK.v) (vA := vL.v))
 
 example [CompleteSpace K] [Algebra.IsSeparable K L] :
   Algebra.FiniteType 𝒪[K] 𝒪[L] := inferInstance
@@ -121,7 +127,7 @@ set_option synthInstance.maxHeartbeats 0
 theorem ramificationIdx_ne_zero [CompleteSpace K] [Algebra.IsSeparable (IsLocalRing.ResidueField ↥𝒪[K]) (IsLocalRing.ResidueField ↥𝒪[L])]: ramificationIdx K L ≠ 0 := by
   letI : IsDiscreteValuationRing 𝒪[L] := aux6 K L
   apply ramificationIdx_ne_zero_of_injective_of_integral
-  exact algebraMap_injective
+  exact Valuation.HasExtension.algebraMap_injective (vK := vK.v) (vA := vL.v)
   rw [← Algebra.isIntegral_iff_isIntegral]
   infer_instance
 

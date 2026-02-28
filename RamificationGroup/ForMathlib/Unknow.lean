@@ -1,7 +1,7 @@
 import Mathlib.Order.SetNotation
 import Mathlib.Order.Defs.PartialOrder
 import Mathlib.Data.Nat.Lattice
-import Mathlib.Algebra.Order.Floor
+import Mathlib.Algebra.Order.Floor.Ring
 import Mathlib.Data.Rat.Floor
 import Mathlib.Data.Int.Interval
 import Mathlib.Algebra.BigOperators.Group.Finset.Defs
@@ -86,43 +86,43 @@ theorem insert_Icc_right (a b : ℤ) (h : a ≤ b) : Finset.Icc a b = insert b (
     apply Finset.Icc_subset_Icc
     rfl; linarith
 
-theorem sum_insert_left_aux (a b : ℤ) (ha : a ≤ b) (f : ℤ → ℕ) : (∑ x in Finset.Icc a b, f x) - f a = (∑ x in Finset.Icc (a + 1) b, f x):= by
+theorem sum_insert_left_aux (a b : ℤ) (ha : a ≤ b) (f : ℤ → ℕ) : (∑ x ∈ Finset.Icc a b, f x) - f a = (∑ x ∈ Finset.Icc (a + 1) b, f x):= by
   calc
-    _ = ∑ x in insert a (Finset.Icc (a + 1) b), f x - f a := by
+    _ = ∑ x ∈ insert a (Finset.Icc (a + 1) b), f x - f a := by
       rw [insert_Icc_left _ _ ha]
-    _ = (∑ x in Finset.Icc (a + 1) b, f x) := by simp
+    _ = (∑ x ∈ Finset.Icc (a + 1) b, f x) := by simp
 
-theorem sum_insert_left_aux' (a b : ℤ) (h : a ≤ b) (f : ℤ → ℤ) : (∑ x in Finset.Icc a b, f x) - f a = (∑ x in Finset.Icc (a + 1) b, f x) := by
+theorem sum_insert_left_aux' (a b : ℤ) (h : a ≤ b) (f : ℤ → ℤ) : (∑ x ∈ Finset.Icc a b, f x) - f a = (∑ x ∈ Finset.Icc (a + 1) b, f x) := by
   calc
-    _ = ∑ x in insert a (Finset.Icc (a + 1) b), f x - f a := by
+    _ = ∑ x ∈ insert a (Finset.Icc (a + 1) b), f x - f a := by
       rw [insert_Icc_left _ _ h]
-    _ = (∑ x in Finset.Icc (a + 1) b, f x) := by simp
+    _ = (∑ x ∈ Finset.Icc (a + 1) b, f x) := by simp
 
-theorem sum_insert_right_aux' (a b : ℤ) (h : a ≤ b) (f : ℤ → ℤ) : (∑ x in Finset.Icc a b, f x) = (∑ x in Finset.Icc a (b - 1), f x) + f b := by
+theorem sum_insert_right_aux' (a b : ℤ) (h : a ≤ b) (f : ℤ → ℤ) : (∑ x ∈ Finset.Icc a b, f x) = (∑ x ∈ Finset.Icc a (b - 1), f x) + f b := by
   calc
-    _ = ∑ x in insert b (Finset.Icc a (b - 1)), f x := by
+    _ = ∑ x ∈ insert b (Finset.Icc a (b - 1)), f x := by
       rw [insert_Icc_right _ _ h]
-    _ = (∑ x in Finset.Icc a (b - 1), f x) + f b := by simp [add_comm]
+    _ = (∑ x ∈ Finset.Icc a (b - 1), f x) + f b := by simp [add_comm]
 
-theorem sum_insert_right_aux (a b : ℤ) (h : a ≤ b) (f : ℚ → ℚ) : (∑ x in Finset.Icc a b, f x) - f b = (∑ x in Finset.Icc a (b - 1), f x) := by
+theorem sum_insert_right_aux (a b : ℤ) (h : a ≤ b) (f : ℚ → ℚ) : (∑ x ∈ Finset.Icc a b, f x) - f b = (∑ x ∈ Finset.Icc a (b - 1), f x) := by
   apply tsub_eq_of_eq_add
   calc
-    _ = ∑ x in insert b (Finset.Icc a (b - 1)), f x := by
+    _ = ∑ x ∈ insert b (Finset.Icc a (b - 1)), f x := by
       rw [insert_Icc_right _ _ h]
-    _ = (∑ x in Finset.Icc a (b - 1), f x) + f b := by simp [add_comm]
+    _ = (∑ x ∈ Finset.Icc a (b - 1), f x) + f b := by simp [add_comm]
 
-theorem sum_insert_right_aux'' (a b : ℤ) (h : a ≤ b) (f : ℤ → ℚ) : (∑ x in Finset.Icc a b, f x) - f b = (∑ x in Finset.Icc a (b - 1), f x) := by
+theorem sum_insert_right_aux'' (a b : ℤ) (h : a ≤ b) (f : ℤ → ℚ) : (∑ x ∈ Finset.Icc a b, f x) - f b = (∑ x ∈ Finset.Icc a (b - 1), f x) := by
   apply tsub_eq_of_eq_add
   calc
-    _ = ∑ x in insert b (Finset.Icc a (b - 1)), f x := by
+    _ = ∑ x ∈ insert b (Finset.Icc a (b - 1)), f x := by
       rw [insert_Icc_right _ _ h]
-    _ = (∑ x in Finset.Icc a (b - 1), f x) + f b := by simp [add_comm]
+    _ = (∑ x ∈ Finset.Icc a (b - 1), f x) + f b := by simp [add_comm]
 
-theorem sum_insert_right_aux''' (a b : ℤ) (h : a ≤ b) (f : ℤ → ℕ) : (∑ x in Finset.Icc a b, f x) = (∑ x in Finset.Icc a (b - 1), f x) + f b := by
+theorem sum_insert_right_aux''' (a b : ℤ) (h : a ≤ b) (f : ℤ → ℕ) : (∑ x ∈ Finset.Icc a b, f x) = (∑ x ∈ Finset.Icc a (b - 1), f x) + f b := by
   calc
-    _ = ∑ x in insert b (Finset.Icc a (b - 1)), f x := by
+    _ = ∑ x ∈ insert b (Finset.Icc a (b - 1)), f x := by
       rw [insert_Icc_right _ _ h]
-    _ = (∑ x in Finset.Icc a (b - 1), f x) + f b := by simp [add_comm]
+    _ = (∑ x ∈ Finset.Icc a (b - 1), f x) + f b := by simp [add_comm]
 
 theorem Int.aux {a b : ℤ} (h1 : a ≤ b) (h2 : b < a + 1) : a = b := by
   by_contra hc

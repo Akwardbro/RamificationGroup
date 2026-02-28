@@ -1,5 +1,5 @@
 import RamificationGroup.LowerNumbering.Basic
-import Mathlib.MeasureTheory.Integral.IntervalIntegral
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.GroupTheory.Index
 import Mathlib.Logic.Function.Basic
 import Mathlib.MeasureTheory.Measure.MeasureSpaceDef
@@ -20,7 +20,7 @@ noncomputable def phiDeriv (u : ℚ) : ℚ :=
   (Nat.card G(S/R)_[(max 0 ⌈u⌉)] : ℚ) / (Nat.card G(S/R)_[0] : ℚ)
 
 noncomputable def phi (u : ℚ) : ℚ :=
-  ∑ x in Finset.Icc 1 (⌈u⌉ - 1), (phiDeriv R S x) + (u - (max 0 (⌈u⌉ - 1))) * (phiDeriv R S u)
+  ∑ x ∈ Finset.Icc 1 (⌈u⌉ - 1), (phiDeriv R S x) + (u - (max 0 (⌈u⌉ - 1))) * (phiDeriv R S u)
 
 omit [Finite (S ≃ₐ[R] S)] in
 theorem phi_zero_eq_zero : phi R S 0 = 0 := by
@@ -69,7 +69,7 @@ theorem phiDeriv_eq_ceil {u : ℚ} : phiDeriv R S u = phiDeriv R S ⌈u⌉ := by
 
 theorem phi_pos_of_pos {u : ℚ} (hu : 0 < u) : 0 < phi R S u := by
   unfold phi
-  have h : 0 ≤ ∑ x in Finset.Icc 1 (⌈u⌉ - 1), phiDeriv R S x := by
+  have h : 0 ≤ ∑ x ∈ Finset.Icc 1 (⌈u⌉ - 1), phiDeriv R S x := by
     by_cases h : ⌈u⌉ - 1 = 0
     · simp [h]
     · apply le_of_lt
@@ -112,7 +112,7 @@ theorem phi_of_pos_of_le_one {u : ℚ} (h1 : 0 < u) (h2 : u ≤ 1) : phi R S u =
   simp [huf1, huf0]
 
 omit [Finite (S ≃ₐ[R] S)] in
-theorem Finset.sum_Icc_sub_sum_Icc {n : ℤ} {m : ℤ} (hn : 1 ≤ n) (hnm : n ≤ m) : ∑ x in Finset.Icc 1 m, phiDeriv R S x - ∑ x in Finset.Icc 1 n, phiDeriv R S x = ∑ x in Finset.Icc (n + 1) m, phiDeriv R S x := by
+theorem Finset.sum_Icc_sub_sum_Icc {n : ℤ} {m : ℤ} (hn : 1 ≤ n) (hnm : n ≤ m) : ∑ x ∈ Finset.Icc 1 m, phiDeriv R S x - ∑ x ∈ Finset.Icc 1 n, phiDeriv R S x = ∑ x ∈ Finset.Icc (n + 1) m, phiDeriv R S x := by
   have hd : Disjoint (Finset.Icc 1 n) (Finset.Icc (n + 1) m) := by
     refine Disjoint.symm ((fun {α} {s t} ↦ Finset.disjoint_left.mpr) ?_)
     intro a ha
@@ -148,7 +148,7 @@ theorem phi_strictMono_of_gt_one {a b : ℚ} (ha : 0 < a) (hb : 1 < b) (hab : a 
     apply (mul_lt_mul_right (by apply phiDeriv_pos R S)).2
     simp only [sub_lt_sub_iff_right, hab]
   · calc
-      _ ≤ ∑ x in Finset.Icc 1 ⌈a⌉, phiDeriv R S x := by
+      _ ≤ ∑ x ∈ Finset.Icc 1 ⌈a⌉, phiDeriv R S x := by
         apply le_trans (b := ∑x in Finset.Icc 1 (⌈a⌉ - 1), phiDeriv R S ↑x + 1 * phiDeriv R S ⌈a⌉)
         rw [phiDeriv_eq_ceil R S]
         apply add_le_add_left
@@ -158,8 +158,8 @@ theorem phi_strictMono_of_gt_one {a b : ℚ} (ha : 0 < a) (hb : 1 < b) (hab : a 
             zero_add, sub_add_cancel]
           right; apply le_ceil
         linarith [this]
-        have h : ∑ x in Finset.Icc 1 (⌈a⌉ - 1), phiDeriv R S x + 1 * phiDeriv R S ⌈a⌉ = ∑ x in Finset.Icc 1 ⌈a⌉, phiDeriv R S x := by
-            have h' : ∑ x in Finset.Icc 1 ⌈a⌉, phiDeriv R S x - 1 * phiDeriv R S ⌈a⌉ = ∑ x in Finset.Icc 1 (⌈a⌉ - 1), phiDeriv R S x := by
+        have h : ∑ x ∈ Finset.Icc 1 (⌈a⌉ - 1), phiDeriv R S x + 1 * phiDeriv R S ⌈a⌉ = ∑ x ∈ Finset.Icc 1 ⌈a⌉, phiDeriv R S x := by
+            have h' : ∑ x ∈ Finset.Icc 1 ⌈a⌉, phiDeriv R S x - 1 * phiDeriv R S ⌈a⌉ = ∑ x ∈ Finset.Icc 1 (⌈a⌉ - 1), phiDeriv R S x := by
               by_cases hc : 1 ≤ a
               · rw [one_mul]
                 apply sum_insert_right_aux 1 ⌈a⌉ ?_ (phiDeriv R S); exact one_le_ceil_iff.mpr ha
@@ -170,7 +170,7 @@ theorem phi_strictMono_of_gt_one {a b : ℚ} (ha : 0 < a) (hb : 1 < b) (hab : a 
                 rw [h]; simp only [Finset.Icc_self, sum_singleton, cast_one, one_mul, sub_self, zero_lt_one, Finset.Icc_eq_empty_of_lt, sum_empty]
             exact add_eq_of_eq_sub (id (Eq.symm h'))
         apply le_of_eq h
-      _ ≤ ∑ x in Finset.Icc 1 (⌈b⌉ - 1), phiDeriv R S x := by
+      _ ≤ ∑ x ∈ Finset.Icc 1 (⌈b⌉ - 1), phiDeriv R S x := by
         have h : ⌈a⌉ ≤ ⌈b⌉ - 1 := by
           have hc : ⌈a⌉ < ⌈b⌉ := by
             apply lt_of_le_of_ne

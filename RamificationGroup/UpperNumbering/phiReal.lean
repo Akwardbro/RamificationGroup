@@ -315,7 +315,7 @@ theorem phiDerivReal_integrableOn_section {k : ℤ} (hk : 0 ≤ k): IntegrableOn
   exact measurableSet_Ioc
 
 
-theorem phiReal_eq_sum_card {u : ℝ} (hu : 0 ≤ u) : phiReal K L u = (1 / Nat.card G(L/K)_[0]) * ((∑ x in Finset.Icc 1 (⌈u⌉ - 1), Nat.card G(L/K)_[x]) + (u - (max 0 (⌈u⌉ - 1))) * (Nat.card G(L/K)_[⌈u⌉])) := by
+theorem phiReal_eq_sum_card {u : ℝ} (hu : 0 ≤ u) : phiReal K L u = (1 / Nat.card G(L/K)_[0]) * ((∑ x ∈ Finset.Icc 1 (⌈u⌉ - 1), Nat.card G(L/K)_[x]) + (u - (max 0 (⌈u⌉ - 1))) * (Nat.card G(L/K)_[⌈u⌉])) := by
   unfold phiReal
   by_cases hu' : u = 0
   · simp only [hu', integral_same, one_div, Int.ceil_zero, zero_sub, Int.reduceNeg, neg_lt_self_iff, zero_lt_one, Finset.Icc_eq_empty_of_lt, Finset.sum_empty, CharP.cast_eq_zero, Left.neg_nonpos_iff, zero_le_one, max_eq_left, Int.cast_zero, sub_self, zero_mul, add_zero, mul_zero]
@@ -381,7 +381,7 @@ theorem phiReal_eq_sum_card {u : ℝ} (hu : 0 ≤ u) : phiReal K L u = (1 / Nat.
           apply lt_of_le_of_ne hu
           exact fun a ↦ hu' (id (Eq.symm a))
         · exact hu
-      _ = ∑ k in Finset.range (⌈u⌉ - 1).toNat, ∫ (x : ℝ) in ((Nat.cast : ℕ → ℝ) k : ℝ)..((Nat.cast : ℕ → ℝ) (k + 1) : ℝ), phiDerivReal K L x ∂μ +  ∫ (x : ℝ) in (⌈u⌉ - 1 : ℝ)..(u : ℝ), phiDerivReal K L x ∂μ := by
+      _ = ∑ k ∈ Finset.range (⌈u⌉ - 1).toNat, ∫ (x : ℝ) in ((Nat.cast : ℕ → ℝ) k : ℝ)..((Nat.cast : ℕ → ℝ) (k + 1) : ℝ), phiDerivReal K L x ∂μ +  ∫ (x : ℝ) in (⌈u⌉ - 1 : ℝ)..(u : ℝ), phiDerivReal K L x ∂μ := by
         rw [intervalIntegral.sum_integral_adjacent_intervals]
         congr
         rw [Nat.cast_zero]
@@ -399,7 +399,7 @@ theorem phiReal_eq_sum_card {u : ℝ} (hu : 0 ≤ u) : phiReal K L u = (1 / Nat.
           exact Int.ofNat_zero_le k
         · simp only [Nat.cast_add, Nat.cast_one, add_lt_iff_neg_left, not_lt, zero_le_one, Set.Ioc_eq_empty, integrableOn_empty]
       _ = _ := by
-        have h : ∑ k in Finset.range (⌈u⌉ - 1).toNat, ∫ x in (k : ℝ)..(↑(k + 1) : ℝ), phiDerivReal K L x ∂μ = ∑ k in Finset.Icc 1 (⌈u⌉ - 1), (Nat.card G(L/K)_[k] : ℝ) / (Nat.card G(L/K)_[0] : ℝ) := by
+        have h : ∑ k ∈ Finset.range (⌈u⌉ - 1).toNat, ∫ x in (k : ℝ)..(↑(k + 1) : ℝ), phiDerivReal K L x ∂μ = ∑ k ∈ Finset.Icc 1 (⌈u⌉ - 1), (Nat.card G(L/K)_[k] : ℝ) / (Nat.card G(L/K)_[0] : ℝ) := by
           rw [Finset.sum, Finset.sum]
           let i : ℕ → ℤ := fun x => x + 1
           let j : ℤ → ℕ := fun x => (x - 1).toNat

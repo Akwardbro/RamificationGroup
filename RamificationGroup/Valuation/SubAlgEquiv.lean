@@ -17,11 +17,11 @@ open Polynomial
 variable {x : B}
 
 theorem pow_mem_adjoin_singleton (n : ℕ) : x ^ n ∈ adjoin A {x} := by
-  induction' n with n ih
-  · simp only [Nat.zero_eq, pow_zero]
-    apply one_mem
-  · rw [pow_succ']
-    apply mul_mem (self_mem_adjoin_singleton _ x) ih
+  induction n with
+  | zero =>
+      simpa using (one_mem (adjoin A ({x} : Set B)))
+  | succ n ih =>
+      simpa [pow_succ'] using mul_mem (self_mem_adjoin_singleton A x) ih
 
 
 end Algebra

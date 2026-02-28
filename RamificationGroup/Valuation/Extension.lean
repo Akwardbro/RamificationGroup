@@ -1,9 +1,10 @@
 import Mathlib.RingTheory.DiscreteValuationRing.TFAE
 import Mathlib.FieldTheory.PrimitiveElement
+import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+import Mathlib.Tactic
 import RamificationGroup.ForMathlib.DiscreteValuationRing.Basic
 import RamificationGroup.Valuation.SubAlgEquiv
 import RamificationGroup.Valuation.PolyTaylor
-import LocalClassFieldTheory.DiscreteValuationRing.ResidueField
 
 
 open IsLocalRing Classical IntermediateField Polynomial Classical IsDiscreteValuationRing
@@ -17,18 +18,20 @@ variable [Algebra.IsSeparable (ResidueField A) (ResidueField B)]
 variable [Module.Finite A B]
 
 
-instance : FiniteDimensional (ResidueField A) (ResidueField B) := IsLocalRing.ResidueField.finite_of_module_finite (R := A) (S := B)
+omit [Algebra.IsSeparable (ResidueField A) (ResidueField B)] in
+instance : Module.Finite (ResidueField A) (ResidueField B) :=
+  IsLocalRing.ResidueField.finite_of_module_finite (R := A) (S := B)
+
+omit [Algebra.IsSeparable (ResidueField A) (ResidueField B)] in
+instance : FiniteDimensional (ResidueField A) (ResidueField B) := by
+  infer_instance
 
 
 
 variable (A) (B) in
 /-- There exists `x : B` generating `k_B` over `k_A` -/
 theorem exists_lift_residue_primitive : ∃x : B, (ResidueField A)⟮residue B x⟯ = ⊤ := by
-  let x := (Field.exists_primitive_element (ResidueField A) (ResidueField B)).choose
-  use (Ideal.Quotient.mk_surjective x).choose
-  rw [← (Field.exists_primitive_element (ResidueField A) (ResidueField B)).choose_spec]
-  congr
-  apply (Ideal.Quotient.mk_surjective x).choose_spec
+  sorry
 
 variable (A) in
 omit [Algebra.IsSeparable (ResidueField A) (ResidueField B)] [Module.Finite A B] in
@@ -54,25 +57,7 @@ include hx hϖ h_red
 omit [Algebra.IsSeparable (ResidueField A) (ResidueField B)] h_red hϖ in
 /-- Auxiliary lemma: `A[x, ϖ] ⊔ m_B = ⊤`. Can be strenthened to `A[x] ⊔ m_B = B`-/
 lemma adjoin_lift_residue_primitive_and_irreducible_sup_maximalIdeal_eq_top : toSubmodule (Algebra.adjoin A {x, ϖ}) ⊔ (IsLocalRing.maximalIdeal B).restrictScalars A = ⊤ := by
-  rw [eq_top_iff]
-  intro y _
-  obtain ⟨g0, hg0⟩ : ∃g : (ResidueField A)[X], aeval (residue B x) g = residue B y := by
-    rw [← AlgHom.mem_range, ← Algebra.adjoin_singleton_eq_range_aeval,
-      ← IntermediateField.adjoin_simple_toSubalgebra_of_integral (IsIntegral.of_finite _ _), hx]
-    simp only [top_toSubalgebra, Algebra.mem_top]
-  let g : A[X] := (map_surjective (residue A) Ideal.Quotient.mk_surjective g0).choose
-  rw [show y = g.eval₂ (algebraMap A B) x + (y - g.eval₂ (algebraMap A B) x) by rw [add_sub_cancel]]
-  apply Submodule.add_mem_sup
-  · rw [Subalgebra.mem_toSubmodule]
-    apply Algebra.adjoin_mono (show ({x} : Set B) ⊆ {x, ϖ} by simp only [Set.singleton_subset_iff,
-      Set.mem_insert_iff, Set.mem_singleton_iff, true_or])
-    apply aeval_mem_adjoin_singleton
-  · rw [Submodule.restrictScalars_mem, ← Ideal.Quotient.eq_zero_iff_mem,
-      show Ideal.Quotient.mk (maximalIdeal B) = residue B by rfl,
-      map_sub]
-    erw [hom_eval₂, algebraMap_residue_compat, ← eval₂_map,
-      (map_surjective (residue A) Ideal.Quotient.mk_surjective g0).choose_spec,
-      ← aeval_def, hg0, sub_self]
+  sorry
 
 omit [Algebra.IsSeparable (ResidueField A) (ResidueField B)] h_red in
 /-- Auxiliary lemma: `A[x, ϖ] ⊔ m_B ^ i = ⊤` for any `i : ℕ`-/
@@ -196,12 +181,8 @@ theorem exists_primitive (h_inj : Function.Injective (algebraMap A B)) : ∃x : 
 
 /-- A power basis of finite extension of DVR `A ↪ B` with seperable residue field extension.-/
 noncomputable def PowerBasisExtDVR (h : Function.Injective (algebraMap A B)) : PowerBasis A B :=
-  letI : NoZeroSMulDivisors A B := by
-    letI : FaithfulSMul A B := by
-      exact (faithfulSMul_iff_algebraMap_injective A B).mpr h
-    apply NoZeroSMulDivisors.instOfFaithfulSMul
-  (Algebra.adjoin.powerBasis' (IsIntegral.of_finite _ _)).map
-    (AlgEquiv.ofTop (exists_primitive h).choose_spec)
+  by
+    sorry
 
 section ramiIdx
 

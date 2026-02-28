@@ -2,12 +2,46 @@
 # WARNING : `WithZero.lean` uses `sorry`
 -/
 
-import LocalClassFieldTheory.DiscreteValuationRing.Complete
-import LocalClassFieldTheory.DiscreteValuationRing.DiscreteNorm
+import Mathlib.RingTheory.Valuation.Discrete.Basic
+import Mathlib.RingTheory.Valuation.Extension
 import Mathlib.Topology.Algebra.Valued.ValuedField
-import LocalClassFieldTheory.ForMathlib.RankOneValuation
+import Mathlib.RingTheory.Valuation.RankOne
 
-open Valuation Valued DiscreteValuation Multiplicative
+open Valuation Valued Multiplicative
+
+notation "ℕₘ₀" => WithZero (Multiplicative ℕ)
+notation "ℤₘ₀" => WithZero (Multiplicative ℤ)
+
+namespace DiscreteValuation
+
+class IsDiscrete {K : Type*} [Field K] (v : Valuation K ℤₘ₀) : Prop
+    extends Valuation.IsRankOneDiscrete v where
+  isUniformizer_iff_val_eq_neg_one : ∀ {π : K}, IsUniformizer v π ↔ v π = ofAdd (-1 : ℤ)
+
+variable {K : Type*} [Field K]
+
+theorem isUniformizer_iff_val_eq_neg_one (v : Valuation K ℤₘ₀) [IsDiscrete v] {π : K} :
+    IsUniformizer v π ↔ v π = ofAdd (-1 : ℤ) := by
+  exact IsDiscrete.isUniformizer_iff_val_eq_neg_one (v := v)
+
+theorem exists_isUniformizer_of_isDiscrete (v : Valuation K ℤₘ₀) [IsDiscrete v] :
+    ∃ π : v.valuationSubring, IsUniformizer v (π : K) := by
+  simpa using (Valuation.exists_isUniformizer_of_isCyclic_of_nontrivial v)
+
+theorem isUniformizer_ne_zero (v : Valuation K ℤₘ₀) [IsDiscrete v] {π : K}
+    (hπ : IsUniformizer v π) : π ≠ 0 :=
+  Valuation.IsUniformizer.ne_zero (v := v) hπ
+
+theorem isUniformizer_val_lt_one (v : Valuation K ℤₘ₀) [IsDiscrete v] {π : K}
+    (hπ : IsUniformizer v π) : v π < 1 :=
+  Valuation.IsUniformizer.val_lt_one (v := v) hπ
+
+theorem pow_uniformizer (v : Valuation K ℤₘ₀) [IsDiscrete v] {r : v.valuationSubring}
+    (hr : r ≠ 0) (π : Uniformizer v) :
+    ∃ n : ℕ, ∃ u : v.valuationSubringˣ, (r : K) = (π.1 : K) ^ n * u.1 := by
+  simpa using (Valuation.exists_pow_Uniformizer (v := v) hr π)
+
+end DiscreteValuation
 
 theorem Int.eq_neg_one_of_dvd_neg_one {x : ℤ} (h : x ≤ 0) (h' : x ∣ -1) : x = -1 := by
   let y := -x
@@ -59,7 +93,7 @@ variable (v) in
 theorem map_zpow (x : K) (n : ℤ) :
   v (x ^ n) = v x ^ n := by
   match n with
-  | .ofNat a => simp only [Int.ofNat_eq_coe, zpow_natCast, _root_.map_pow]
+  | .ofNat a => simp only [Int.ofNat_eq_natCast, zpow_natCast, _root_.map_pow]
   | .negSucc a => simp only [zpow_negSucc, map_inv₀, _root_.map_pow]
 
 end division_ring
@@ -101,47 +135,60 @@ namespace DiscreteValuation
 
 variable {K : Type*} [Field K]
   {v v' : Valuation K ℤₘ₀}
+variable [IsDiscrete v]
 
 theorem pow_Uniformizer_all {x : K} (hx : x ≠ 0) (π : Uniformizer v) :
   ∃ n : ℤ, ∃ u : v.valuationSubringˣ, x = (π.1 : K) ^ n * u.1 := by
   rcases ValuationSubring.mem_or_inv_mem v.valuationSubring x with h | h
   · let r : v.valuationSubring := ⟨x, h⟩
-    have : r ≠ 0 := by
+    have hr0 : r ≠ 0 := by
       simp only [r, ne_eq, Subtype.ext_iff, ZeroMemClass.coe_zero, hx, not_false_eq_true]
-    rcases pow_uniformizer v this π with ⟨n, u, hnu⟩
-    use n, u
+    rcases pow_uniformizer v hr0 π with ⟨n, u, hnu⟩
+    refine ⟨(n : ℤ), u, ?_⟩
     rw [show x = r.1 by rfl, hnu]
-    simp only [SubmonoidClass.coe_pow, zpow_natCast]
+    simp only [zpow_natCast]
   · let r : v.valuationSubring := ⟨x⁻¹, h⟩
-    have : r ≠ 0 := by simp only [r, ne_eq, Subtype.ext_iff, ZeroMemClass.coe_zero, inv_eq_zero, hx, not_false_eq_true]
-    rcases pow_uniformizer v this π with ⟨n, u, hnu⟩
-    use -n, u⁻¹
-    rw [← inv_inj, show x⁻¹ = r.1 by rfl, hnu, mul_inv]
-    simp only [SubmonoidClass.coe_pow, zpow_neg, zpow_natCast, inv_inv, mul_eq_mul_left_iff, pow_eq_zero_iff', ZeroMemClass.coe_eq_zero, ne_eq]
-    left; rw [← inv_eq_iff_eq_inv]
-    field_simp; symm
+    have hr0 : r ≠ 0 := by
+      simp only [r, ne_eq, Subtype.ext_iff, ZeroMemClass.coe_zero, inv_eq_zero, hx, not_false_eq_true]
+    rcases pow_uniformizer v hr0 π with ⟨n, u, hnu⟩
+    refine ⟨-(n : ℤ), u⁻¹, ?_⟩
+    have hxinv : x⁻¹ = (π.1 : K) ^ n * u.1 := by
+      simpa [r] using hnu
     calc
-      _ = (((1 /ₚ u) * u : Valuation.valuationSubring v) : K) := by congr
-      _ = (1 : K) := by simp only [one_divp, Units.inv_mul, OneMemClass.coe_one]
+      x = ((π.1 : K) ^ n * u.1)⁻¹ := by
+        simpa using congrArg Inv.inv hxinv
+      _ = ((π.1 : K) ^ n)⁻¹ * (u.1 : K)⁻¹ := by rw [mul_inv]
+      _ = (π.1 : K) ^ (-(n : ℤ)) * (u.1 : K)⁻¹ := by
+        rw [show ((π.1 : K) ^ n)⁻¹ = (π.1 : K) ^ (-(n : ℤ)) by
+          rw [← zpow_natCast, zpow_neg]]
+      _ = (π.1 : K) ^ (-(n : ℤ)) * (u⁻¹).1 := by
+        have hu_inv : (u.1 : K)⁻¹ = ((u⁻¹).1 : K) := by
+          apply inv_eq_of_mul_eq_one_right
+          exact_mod_cast (Units.mul_inv u)
+        rw [hu_inv]
 
 theorem pow_Uniformizer' {x : K} (h0 : x ≠ 0) (hx : v x ≤ 1) (π : Uniformizer v) :
   ∃ n : ℕ, ∃ u : v.valuationSubring ˣ, x = (π.1 : K) ^ n * u.1 := by
   let r : v.valuationSubring := ⟨x, hx⟩
-  have : r ≠ 0 := by simp only [r, ne_eq, Subtype.ext_iff, ZeroMemClass.coe_zero, h0, not_false_eq_true]
-  rcases pow_uniformizer v this π with ⟨n, u, hnu⟩
-  use n, u
-  rw [show x = r.1 by rfl, hnu, SubmonoidClass.coe_pow]
+  have hr0 : r ≠ 0 := by
+    simp only [r, ne_eq, Subtype.ext_iff, ZeroMemClass.coe_zero, h0, not_false_eq_true]
+  rcases pow_uniformizer v hr0 π with ⟨n, u, hnu⟩
+  refine ⟨n, u, ?_⟩
+  simpa [r] using hnu
 
 #check Valuation.unit_map_eq
 theorem val_pow_Uniformizer {π : Uniformizer v} {n : ℕ} {u : v.valuationSubringˣ} :
   v ((π.1 : K) ^ n * u.1) = ofAdd (-n : ℤ) := by
-  rw [v.map_mul, Valuation.map_pow, π.2, val_valuationSubring_unit, mul_one, ← WithZero.coe_pow]
-  congr 1
+  have hπ : v (π.1 : K) = ofAdd (-1 : ℤ) :=
+    (isUniformizer_iff_val_eq_neg_one (v := v)).1 π.2
+  rw [_root_.map_mul, Valuation.map_pow, hπ, val_valuationSubring_unit, mul_one, ← WithZero.coe_pow]
   simp only [Int.reduceNeg, ofAdd_neg, inv_pow, ← ofAdd_nsmul, nsmul_eq_mul, mul_one]
 
 theorem val_pow_Uniformizer_all {π : Uniformizer v} {n : ℤ} {u : v.valuationSubringˣ} :
   v ((π.1 : K) ^ n * u.1) = ofAdd (-n : ℤ) := by
-  rw [v.map_mul, Valuation.map_zpow, π.2, val_valuationSubring_unit, mul_one, ← WithZero.coe_zpow]
+  have hπ : v (π.1 : K) = ofAdd (-1 : ℤ) :=
+    (isUniformizer_iff_val_eq_neg_one (v := v)).1 π.2
+  rw [_root_.map_mul, Valuation.map_zpow, hπ, val_valuationSubring_unit, mul_one, ← WithZero.coe_zpow]
   congr 1
   change n * -1 = -n
   exact mul_neg_one n
@@ -156,12 +203,16 @@ variable [IsDiscrete v']
 /--If `π : K` is a uniformizer for `v`, and `v x ≤ 1 → v' x ≤ 1, ∀ x : K`, then `π` is also a uniformizer for `v'`.-/
 lemma isUniformizer_of_uniformizer_of_le_one_le_one (h : ∀{x : K}, v x ≤ 1 → v' x ≤ 1)
   (π : Uniformizer v) : IsUniformizer v' π.1 := by
-  rcases exists_isUniformizer_of_isDiscrete v' with ⟨π', hπ'⟩
-  rcases pow_Uniformizer_all (isUniformizer_ne_zero hπ') π with ⟨m, u, hmu⟩
+  rcases exists_isUniformizer_of_isDiscrete (v := v') with ⟨π', hπ'⟩
+  rcases pow_Uniformizer_all (isUniformizer_ne_zero (v := v') hπ') π with ⟨m, u, hmu⟩
+  have hπ'val : v' (π' : K) = ofAdd (-1 : ℤ) :=
+    (isUniformizer_iff_val_eq_neg_one (v := v')).1 hπ'
   replace hmu := congrArg v' hmu
   rw [_root_.map_mul, map_zpow₀,
-    eq_one_of_eq_one_of_le_one_le_one h val_valuationSubring_unit, mul_one, hπ'] at hmu
-  rw [IsUniformizer, WithZero.ofAdd_eq_neg_one_of_pow_eq_neg_one (h <| le_of_lt <| isUniformizer_val_lt_one π.2) hmu.symm]
+    eq_one_of_eq_one_of_le_one_le_one h val_valuationSubring_unit, mul_one, hπ'val] at hmu
+  exact (isUniformizer_iff_val_eq_neg_one (v := v')).2
+    (WithZero.ofAdd_eq_neg_one_of_pow_eq_neg_one
+      (h <| le_of_lt <| isUniformizer_val_lt_one (v := v) π.2) hmu.symm)
 
 /--If `π : K` is a uniformizer for `v`, and `v` is equivalent to `v'`, then `π` is also a uniformizer for `v'`.-/
 theorem isUniformizer_of_uniformizer_of_equiv (h : v.IsEquiv v')
@@ -170,19 +221,18 @@ theorem isUniformizer_of_uniformizer_of_equiv (h : v.IsEquiv v')
 
 theorem val_pow_Uniformizer_all_of_equiv (h : v.IsEquiv v') {π : Uniformizer v} {n : ℤ} {u : v.valuationSubringˣ} :
   v' ((π.1 : K) ^ n * u.1) = ofAdd (-n : ℤ) := by
-  rw [v'.map_mul, Valuation.map_zpow,
-    isUniformizer_of_uniformizer_of_equiv h]
+  have hπ : v' (π.1 : K) = ofAdd (-1 : ℤ) :=
+    (isUniformizer_iff_val_eq_neg_one (v := v')).1 (isUniformizer_of_uniformizer_of_equiv h π)
+  rw [_root_.map_mul, Valuation.map_zpow, hπ]
   have : v' (u : K) = 1 := by
     rw [← (isEquiv_iff_val_eq_one).mp h, val_valuationSubring_unit]
-  simp only [Int.reduceNeg, ofAdd_neg, WithZero.coe_inv, inv_zpow', zpow_neg, this, mul_one, inv_inj,
+  simp only [Int.reduceNeg, ofAdd_neg, WithZero.coe_inv, inv_zpow', zpow_neg, this, mul_one,
     ← WithZero.coe_zpow, ← ofAdd_zsmul, smul_eq_mul, mul_one] -- `WithZero.coe_zpow` should be tagged with @[norm_cast], but it is not.
-
-variable [IsDiscrete v]
 
 theorem lt_one_lt_one_of_le_one_le_one (h : ∀{x : K}, v x ≤ 1 → v' x ≤ 1) {x : K} (hx : v x < 1) : v' x < 1 := by
   by_cases xne0 : x = 0
   · simp only [xne0, _root_.map_zero, zero_lt_one]
-  rcases exists_isUniformizer_of_isDiscrete v with ⟨π, hπ⟩
+  rcases exists_isUniformizer_of_isDiscrete (v := v) with ⟨π, hπ⟩
   rcases pow_Uniformizer' xne0 (le_of_lt hx) ⟨π, hπ⟩ with ⟨n, u, hnu⟩
   have ngt1 : ((ofAdd (-n) : Multiplicative ℤ) : ℤₘ₀) < 1 := by
     apply congrArg v at hnu
@@ -211,8 +261,14 @@ theorem isEquiv_of_le_one_le_one (h : ∀{x : K}, v x ≤ 1 → v' x ≤ 1) :
   have : (1 : ℤₘ₀) < 1 := by
     nth_rw 1 [← Valuation.map_one v']
     rw [(CommGroupWithZero.mul_inv_cancel x xne0).symm, Valuation.map_mul, show (1 : ℤₘ₀) = 1 * 1 by rfl]
-    apply mul_lt_mul_of_lt_of_le₀ v'xle (by simp only [ne_eq, one_ne_zero, not_false_eq_true])
-    exact lt_one_lt_one_of_le_one_le_one h <| (one_lt_val_iff _ xne0).mp vxgt
+    have hx0 : v' x ≠ 0 := by
+      rw [Valuation.ne_zero_iff]
+      exact xne0
+    have hxpos : 0 < v' x := lt_of_le_of_ne zero_le' (Ne.symm hx0)
+    have hlt : v' x⁻¹ < 1 :=
+      lt_one_lt_one_of_le_one_le_one h <| (one_lt_val_iff _ xne0).mp vxgt
+    have hmul : v' x⁻¹ * v' x < 1 * 1 := mul_lt_mul hlt v'xle hxpos zero_le'
+    simpa [mul_comm, mul_left_comm, mul_assoc] using hmul
   contradiction
 
 /-- For discrete valuations, being equivalent is the same as being equal. -/
@@ -221,7 +277,7 @@ theorem isEquiv_iff_eq : v.IsEquiv v' ↔ v = v' := by
   · intro heq; ext x
     by_cases h0 : x = 0
     · simp only [h0, _root_.map_zero]
-    · rcases exists_isUniformizer_of_isDiscrete v with ⟨π, hπ⟩
+    · rcases exists_isUniformizer_of_isDiscrete (v := v) with ⟨π, hπ⟩
       rcases pow_Uniformizer_all h0 ⟨π, hπ⟩ with ⟨n, u, hnu⟩
       rw [hnu, val_pow_Uniformizer_all, val_pow_Uniformizer_all_of_equiv heq]
   · exact IsEquiv.of_eq
@@ -260,9 +316,9 @@ section adic_complete
 
 variable {K : Type*} [Field K] [vK : Valued K ℤₘ₀]
 
-local notation "m[" K "]" => LocalRing.maximalIdeal 𝒪[K]
+local notation "m[" K "]" => IsLocalRing.maximalIdeal 𝒪[K]
 
-variable [CompleteSpace K] [IsDiscrete vK.v]
+variable [CompleteSpace K] [DiscreteValuation.IsDiscrete vK.v]
 
 variable (K)
 

@@ -18,13 +18,10 @@ theorem WithTop.untop_add_one (x : WithTop ℕ) (h : x ≠ ⊤) : WithTop.untop 
   simp only [coe_add, coe_untop, coe_one]
 
 theorem WithTop.untop_lt_untop {a b : WithTop ℕ} (ha : a ≠ ⊤) (hb : b ≠ ⊤) : WithTop.untop a ha < WithTop.untop b hb ↔ a < b := by
-  constructor<;>intro h
-  · by_contra hc
-    absurd h
-    push_neg at hc ⊢
-    apply (WithTop.le_untop_iff _).2
-    simp only [WithTop.coe_untop]
-    exact hc
-  · apply (WithTop.lt_untop_iff _).2
-    simp only [WithTop.coe_untop]
-    exact h
+  constructor <;> intro h
+  · have h' : a < ((WithTop.untop b hb : ℕ) : WithTop ℕ) :=
+      (WithTop.untop_lt_iff ha).1 h
+    exact lt_of_lt_of_eq h' (WithTop.coe_untop b hb)
+  · have h' : a < ((WithTop.untop b hb : ℕ) : WithTop ℕ) := by
+      exact lt_of_lt_of_eq h (WithTop.coe_untop b hb).symm
+    exact (WithTop.untop_lt_iff ha).2 h'
