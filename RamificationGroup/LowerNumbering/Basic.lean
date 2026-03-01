@@ -68,16 +68,13 @@ def lowerRamificationGroup (u : ℤ) : Subgroup (S ≃ₐ[R] S) where
 scoped [Valued] notation:max " G(" S:max "/" R:max ")_[" u:max "] " => lowerRamificationGroup R S u
 
 theorem lowerRamificationGroup.antitone : Antitone (lowerRamificationGroup R S) := by
-  intro a b hab
-  simp only [lowerRamificationGroup, ofAdd_sub, ofAdd_neg, Subtype.forall, Subgroup.mk_le_mk,
-    Set.setOf_subset_setOf, and_imp]
-  rintro s hs1 hs2
+  intro a b hab s hs
   constructor
-  · exact hs1
-  · intro y hy
-    apply le_trans (hs2 y hy)
-    simp only [WithZero.coe_le_coe, div_le_iff_le_mul, div_mul_cancel, inv_le_inv_iff,
-      Multiplicative.ofAdd_le]
+  · exact hs.1
+  · intro y
+    apply le_trans (hs.2 y)
+    simp only [ofAdd_sub, ofAdd_neg, WithZero.coe_le_coe, div_le_iff_le_mul, div_mul_cancel,
+      inv_le_inv_iff, Multiplicative.ofAdd_le]
     exact hab
 
 end def_lower_rami_grp
@@ -130,11 +127,17 @@ theorem autCongr_mem_lowerRamificationGroup_iff {f : S ≃ₐ[R] S'} (hf : ∀ a
    -- need theorem/def of lift of f to integer is isom
   · nth_rw 2 [← AlgEquiv.symm_apply_apply f.symm a]
     simp only [AlgEquiv.symm_symm]
-    rw [← _root_.map_sub f (s (f.symm a)) (f.symm a), ← hf _]
-    apply h.2
-    apply (mem_integer_iff _ _).2
-    rw [hf' _]
-    exact ha
+    have hmem : f.symm a ∈ v.integer := by
+      apply (mem_integer_iff _ _).2
+      rw [hf' _]
+      exact ha
+    have hs' := h.2 (f.symm a) hmem
+    calc
+      v ((f.symm.trans (s.trans f)) a - f (f.symm a)) = v (f (s (f.symm a) - f.symm a)) := by
+        simp only [AlgEquiv.trans_apply, _root_.map_sub]
+      _ = v (s (f.symm a) - f.symm a) := by
+        simpa using (hf (s (f.symm a) - f.symm a)).symm
+      _ ≤ _ := by simpa using hs'
   · constructor <;> intro hs'
     · simp only [comap_apply, RingHom.coe_coe]
       rw [hf _, hf _, ← AlgEquiv.symm_apply_apply f a, ← AlgEquiv.symm_apply_apply f ha]
@@ -165,26 +168,23 @@ open Classical
 -- there is no `ConditionallyCompleteLinearOrderTop` in mathlib ...
 -- # The definition of `WithTop.instInfSet` have to be changed （done in latest version）
 noncomputable instance {α} [ConditionallyCompleteLinearOrder α] : ConditionallyCompleteLinearOrderBot (WithBot α) where
-  toConditionallyCompleteLattice := WithBot.conditionallyCompleteLattice
-  le_total := WithBot.linearOrder.le_total
-  decidableLE := WithBot.decidableLE
-  decidableEq := WithBot.decidableEq
-  decidableLT := WithBot.decidableLT
-  csSup_of_not_bddAbove s h := by
-    rw [WithBot.sSup_empty]
-    simp only [sSup, sInf, Set.subset_singleton_iff]
-    by_cases hs : ∀ y ∈ s, y = (⊤ : WithTop αᵒᵈ)
-    · rw [if_pos (Or.inl hs)]; rfl
-    · rw [show (⊤ : WithTop αᵒᵈ) = (⊥ : WithBot α) by rfl, ite_eq_left_iff]
-      intro h1
-      push_neg at h1
+  toConditionallyCompleteLinearOrder := {
+    toConditionallyCompleteLattice := WithBot.conditionallyCompleteLattice
+    le_total := WithBot.linearOrder.le_total
+    toDecidableLE := inferInstance
+    csSup_of_not_bddAbove := by
+      intro s h
+      rw [WithBot.sSup_empty]
+      change (if s ⊆ ({⊥} : Set (WithBot α)) ∨ ¬BddAbove s then (⊥ : WithBot α)
+        else ↑(sSup ((fun a : α ↦ (↑a : WithBot α)) ⁻¹' s))) = ⊥
+      exact if_pos (Or.inr h)
+    csInf_of_not_bddBelow := by
+      intro s h
       exfalso
-      exact h h1.2
-  csInf_of_not_bddBelow s h := by
-    exfalso
-    exact h (OrderBot.bddBelow s)
-  bot_le := WithBot.orderBot.bot_le
-  csSup_empty := by simp only [WithBot.sSup_empty]
+      exact h (OrderBot.bddBelow s) }
+  toOrderBot := inferInstance
+  csSup_empty := by
+    simp only [WithBot.sSup_empty]
 
 noncomputable instance {α} [ConditionallyCompleteLinearOrder α] : ConditionallyCompleteLinearOrderBot (WithZero α) := inferInstanceAs (ConditionallyCompleteLinearOrderBot (WithBot α))
 
@@ -280,12 +280,7 @@ theorem decomp_val_map_sub_le_generator {gen : 𝒪[L]} (hgen : Algebra.adjoin �
   rw [hb]
   simp only [Subring.coe_mul, AddSubgroupClass.coe_sub,DecompositionGroup.restrictValuationSubring_apply', _root_.map_mul]
   nth_rw 2 [← mul_one (v (s gen - gen))]
-  rw [mul_le_mul_left]
-  · exact b.2
-  · apply lt_of_le_of_ne
-    exact WithZero.zero_le (v (s ↑gen - ↑gen))
-    symm
-    apply decomp_val_map_generator_sub_ne_zero hgen hs' hs
+  exact mul_le_mul_of_nonneg_left b.2 (WithZero.zero_le (v (s ↑gen - ↑gen)))
 
 --sup_{x ∈ S | v x ≤ 1} v (s (x) - x) = v (s gen - gen)
 theorem decomp_iSup_val_map_sub_eq_generator {gen : 𝒪[L]} (hgen : Algebra.adjoin 𝒪[K] {gen} = ⊤) {s : L ≃ₐ[K] L} (hs' : s ∈ decompositionGroup K L) :
@@ -337,14 +332,15 @@ theorem lowerIndex_ne_one {s : L ≃ₐ[K] L} (hs' : s ∈ decompositionGroup K 
     dite_eq_left_iff, ENat.coe_ne_top, imp_false, not_not] at heq
   have hL : ∀ x : vL.v.integer, s x = x := by
     intro x
-    apply le_of_eq at heq
-    rw [← sub_eq_zero, ← Valuation.zero_iff vL.v, show (0 : ℤₘ₀) = ⊥ by rfl, eq_bot_iff]
-    refine (ciSup_le_iff' ?_).mp heq x
-    use 1
-    intro a ha
-    rcases ha with ⟨y, hy⟩
-    rw [← hy]
-    exact sub_self_mem_integer hs' _
+    have hxle : v (s x - x) ≤ 0 := by
+      refine (ciSup_le_iff' ?_).mp (le_of_eq heq) x
+      use 1
+      intro a ha
+      rcases ha with ⟨y, hy⟩
+      rw [← hy]
+      exact sub_self_mem_integer hs' _
+    have hxeq : v (s x - x) = 0 := le_antisymm hxle (WithZero.zero_le _)
+    exact sub_eq_zero.mp ((Valuation.zero_iff vL.v).1 hxeq)
   apply hs
   ext x
   rcases ValuationSubring.mem_or_inv_mem vL.v.valuationSubring x with h | h
@@ -382,10 +378,8 @@ theorem mem_lowerRamificationGroup_of_le_neg_one {s : L ≃ₐ[K] L} (hs : s ∈
   · exact hs
   · intro a ha
     apply le_trans (val_map_sub_le_one hs ⟨a, ha⟩)
-    simp only [WithZero.one_le_coe, one_le_div', le_inv_iff_mul_le_one_left, ← ofAdd_add]
-    refine Multiplicative.toAdd_le.mp ?_
-    simp only [ofAdd_add, toAdd_mul, toAdd_ofAdd, toAdd_one]
-    linarith [hu]
+    change (1 : ℤₘ₀) ≤ ↑(Multiplicative.ofAdd (-u - 1))
+    exact WithZero.coe_le_coe.mpr <| (Multiplicative.ofAdd_le).mpr (by linarith [hu])
 
 -- the type of `n` should be changed
 -- instead, change when use this theorem
@@ -397,46 +391,67 @@ theorem mem_lowerRamificationGroup_iff_of_generator
   simp only [lowerRamificationGroup, Subtype.forall, Subgroup.mem_mk,
     Set.mem_setOf_eq, AlgEquiv.lowerIndex]
   by_cases hrefl : s = .refl
-  · simp only [hrefl, AlgEquiv.coe_refl, id_eq, sub_self, _root_.map_zero, ofAdd_sub, ofAdd_neg,
-    zero_le', implies_true, and_true, ciSup_const, ↓reduceDIte, le_top, iff_true]
-    exact refl_mem_decompositionGroup K L
+  · subst hrefl
+    constructor
+    · intro _
+      simp only [AlgEquiv.lowerIndex, AlgEquiv.coe_refl, id_eq, sub_self, _root_.map_zero, ciSup_const,
+        ↓reduceDIte, le_top]
+    · intro _
+      refine ⟨refl_mem_decompositionGroup K L, ?_⟩
+      intro a ha
+      simp only [AlgEquiv.coe_refl, id_eq, sub_self, _root_.map_zero, ofAdd_sub, ofAdd_neg, zero_le']
   · have hne0 : ¬ ⨆ x : vL.v.integer, vL.v (s x - x) = 0 := by
       rw [iSup_val_map_sub_eq_zero_iff_eq_refl hs']; exact hrefl
     constructor
-    · intro ⟨_, hs⟩
-      simp only [hne0, ↓reduceDIte, ge_iff_le]
-      rw [show (n : ℕ∞) + 1 = (n + 1 : ℕ) by rfl, ← ENat.some_eq_coe, WithTop.coe_le_coe,
-        Int.le_toNat (by simp only [Left.nonneg_neg_iff, toAdd_iSup_val_map_sub_le_zero_of_ne_zero hs']),
-        le_neg]
-      change _ ≤ toAdd (ofAdd (-(n + 1) : ℤ))
-      rw [toAdd_le]
-      /- The following part should be extracted.
-      It is also used in `toAdd_iSup_val_map_sub_le_zero_of_ne_zero`. -/
-      suffices ⨆ x : vL.v.integer, vL.v (s x - x) ≤ ofAdd (-(n + 1) : ℤ) from by
+    · intro hs_mem
+      rcases hs_mem with ⟨_, hs_bound⟩
+      have hsup :
+          ⨆ x : vL.v.integer, vL.v (s x - x) ≤ (↑(Multiplicative.ofAdd (-(n + 1 : ℤ))) : ℤₘ₀) := by
+        apply ciSup_le
+        intro x
+        simpa [div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc, neg_add'] using hs_bound x.1 x.2
+      have hunzero_le : WithZero.unzero hne0 ≤ Multiplicative.ofAdd (-(n + 1 : ℤ)) := by
         rw [← WithZero.coe_le_coe, WithZero.coe_unzero hne0]
-        exact this
-      apply ciSup_le
-      /- end -/
-      intro x
-      rw [neg_add']
-      exact hs x.1 x.2
+        exact hsup
+      have htoAdd : Multiplicative.toAdd (WithZero.unzero hne0) ≤ -(n + 1 : ℤ) := by
+        exact Multiplicative.toAdd_le.mp hunzero_le
+      have hznonneg : 0 ≤ -Multiplicative.toAdd (WithZero.unzero hne0) := by
+        exact neg_nonneg.mpr (toAdd_iSup_val_map_sub_le_zero_of_ne_zero hs' hne0)
+      have hz : (n + 1 : ℤ) ≤ -Multiplicative.toAdd (WithZero.unzero hne0) := by
+        linarith [htoAdd]
+      have hnat : n + 1 ≤ (-Multiplicative.toAdd (WithZero.unzero hne0)).toNat :=
+        (Int.le_toNat hznonneg).2 hz
+      simp only [hne0, ↓reduceDIte, ge_iff_le]
+      exact WithTop.coe_le_coe.mpr hnat
     · intro h
-      simp only [hs', true_and]
-      simp only [hne0, ↓reduceDIte] at h
-      rw [show (n : ℕ∞) + 1 = (n + 1 : ℕ) by rfl, ← ENat.some_eq_coe, WithTop.coe_le_coe,
-        Int.le_toNat (by simp only [Left.nonneg_neg_iff, toAdd_iSup_val_map_sub_le_zero_of_ne_zero hs']),
-        le_neg] at h
-      change _ ≤ toAdd (ofAdd (-(n + 1) : ℤ)) at h
-      rw [toAdd_le, ← WithZero.coe_le_coe, WithZero.coe_unzero hne0, neg_add'] at h
+      have hnat : n + 1 ≤ (-Multiplicative.toAdd (WithZero.unzero hne0)).toNat := by
+        have h' : (↑(n + 1) : ℕ∞) ≤ ↑((-Multiplicative.toAdd (WithZero.unzero hne0)).toNat) := by
+          simpa only [hne0, AlgEquiv.lowerIndex, ↓reduceDIte, ge_iff_le] using h
+        exact WithTop.coe_le_coe.mp h'
+      have hznonneg : 0 ≤ -Multiplicative.toAdd (WithZero.unzero hne0) := by
+        exact neg_nonneg.mpr (toAdd_iSup_val_map_sub_le_zero_of_ne_zero hs' hne0)
+      have hz : (n + 1 : ℤ) ≤ -Multiplicative.toAdd (WithZero.unzero hne0) :=
+        (Int.le_toNat hznonneg).1 hnat
+      have htoAdd : Multiplicative.toAdd (WithZero.unzero hne0) ≤ -(n + 1 : ℤ) := by
+        linarith [hz]
+      have hunzero_le : WithZero.unzero hne0 ≤ Multiplicative.ofAdd (-(n + 1 : ℤ)) := by
+        exact (Multiplicative.toAdd_le).2 htoAdd
+      have hsup :
+          ⨆ x : vL.v.integer, vL.v (s x - x) ≤ (↑(Multiplicative.ofAdd (-(n + 1 : ℤ))) : ℤₘ₀) := by
+        have hsup' :
+            (↑(WithZero.unzero hne0) : ℤₘ₀) ≤ (↑(Multiplicative.ofAdd (-(n + 1 : ℤ))) : ℤₘ₀) :=
+          WithZero.coe_le_coe.mpr hunzero_le
+        simpa [WithZero.coe_unzero hne0] using hsup'
+      refine ⟨hs', ?_⟩
       intro x hx
-      apply le_trans _ h
-      apply le_ciSup (f := fun (x : vL.v.integer) ↦ v (s x - x)) _ ⟨x, hx⟩
-      use v (s gen - gen)
-      intro a
-      simp only [Set.mem_range, Subtype.exists, exists_prop, forall_exists_index, and_imp]
-      intro x hx heq
-      rw [← heq]
-      apply decomp_val_map_sub_le_generator hgen hs' ⟨x, hx⟩
+      have hbdd : BddAbove (Set.range fun x : vL.v.integer ↦ v (s x - x)) := by
+        refine ⟨1, ?_⟩
+        rintro y ⟨z, rfl⟩
+        exact val_map_sub_le_one hs' z
+      have hxle :
+          v (s x - x) ≤ (↑(Multiplicative.ofAdd (-(n + 1 : ℤ))) : ℤₘ₀) :=
+        le_trans (le_ciSup (f := fun (x : vL.v.integer) ↦ v (s x - x)) hbdd ⟨x, hx⟩) hsup
+      simpa [div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc, neg_add'] using hxle
 
 
 theorem mem_lowerRamificationGroup_of_le_truncatedLowerIndex_sub_one {s : L ≃ₐ[K] L} (hs' : s ∈ decompositionGroup K L) {gen : 𝒪[L]} (hgen : Algebra.adjoin 𝒪[K] {gen} = ⊤) {u r : ℚ} (h : u ≤ i_[L/K]ₜ r s - 1) : s ∈ G(L/K)_[⌈u⌉] := by
@@ -567,17 +582,20 @@ variable {R : Type*} {R' S: Type*} {ΓR ΓS ΓA ΓB : outParam Type*} [CommRing 
 theorem lowerRamificationGroup_eq_decompositionGroup {u : ℤ} (h : u ≤ -1) :
 G(S/R)_[u] = decompositionGroup R S := by
   ext s
-  simp only [lowerRamificationGroup, ofAdd_sub, ofAdd_neg, Subtype.forall, Subgroup.mem_mk,
-    Set.mem_setOf_eq, and_iff_left_iff_imp]
-  intro hs a ha
-  calc
-    _ ≤ max (v (s a)) (v a) := Valuation.map_sub _ _ _
-    _ ≤ 1 := max_le ((val_map_le_one_iff hs a).mpr ha) ha
-    _ ≤ _ := by
-      show (.coe (0 : ℤ) : ℤₘ₀) ≤ .coe ((- u - 1) : ℤ)
-      norm_cast
-      show (0 : ℤ) ≤ - u - 1
-      linarith
+  constructor
+  · intro hs
+    exact hs.1
+  · intro hs
+    refine ⟨hs, ?_⟩
+    intro a
+    calc
+      _ ≤ max (v (s (a : S))) (v (a : S)) := Valuation.map_sub _ _ _
+      _ ≤ 1 := max_le ((val_map_le_one_iff hs a).mpr a.2) a.2
+      _ ≤ _ := by
+        show (.coe (0 : ℤ) : ℤₘ₀) ≤ .coe ((- u - 1) : ℤ)
+        norm_cast
+        show (0 : ℤ) ≤ - u - 1
+        linarith
 
 end lower_eq_decomp
 
@@ -659,7 +677,8 @@ set_option synthInstance.maxHeartbeats 1000000
 
 omit [CompleteSpace K] in
 theorem AlgEquiv.Simple_Extension_of_CDVR [CompleteSpace K] [Algebra.IsSeparable K L] [Algebra.IsSeparable (IsLocalRing.ResidueField 𝒪[K]) (IsLocalRing.ResidueField 𝒪[L])] : ∃ gen : 𝒪[L], Algebra.adjoin 𝒪[K] {gen} = ⊤ := by
-  apply ExtDVR.exists_primitive (A := 𝒪[K]) (B := 𝒪[L]) algebraMap_injective
+  apply ExtDVR.exists_primitive (A := 𝒪[K]) (B := 𝒪[L])
+  exact Valuation.HasExtension.algebraMap_injective (vK := vK.v) (vA := vL.v)
 
 --can delete the assumption of generator.
 /-- Should be strenthened to ` > 0`-/
@@ -692,12 +711,7 @@ theorem AlgEquiv.val_map_sub_le_generator {gen : 𝒪[L]} (hgen : Algebra.adjoin
   simp only [Subring.coe_mul, AddSubgroupClass.coe_sub, AlgEquiv.restrictValuationSubring_apply,
     _root_.map_mul]
   nth_rw 2 [← mul_one (v (s gen - gen))]
-  rw [mul_le_mul_left]
-  · exact b.2
-  · apply lt_of_le_of_ne
-    exact WithZero.zero_le (v (s ↑gen - ↑gen))
-    symm
-    apply AlgEquiv.val_map_generator_sub_ne_zero hgen hs
+  exact mul_le_mul_of_nonneg_left b.2 (WithZero.zero_le (v (s ↑gen - ↑gen)))
 
 open Polynomial in
 /-- The orginal proof uses `PowerBasis.exists_eq_aeval`. -/
@@ -751,8 +765,8 @@ theorem iSup_ne_refl_lowerIndex_ne_top [Nontrivial (L ≃ₐ[K] L)] :
   constructor
   · exact WithTop.coe_lt_top _
   · intro s
-    have : i_[L/K] s = f s := by
-      rw [← ENat.some_eq_coe, WithTop.coe_untop]
+    have : i_[L/K] s = (f s : ℕ∞) := by
+      exact (WithTop.coe_untop (i_[L/K] s) (lowerIndex_ne_refl s.2)).symm
     simp only [ne_eq, this, Nat.cast_le, ha]
 
 
@@ -774,23 +788,44 @@ omit [CompleteSpace K] in
 theorem exist_lowerRamificationGroup_eq_bot [CompleteSpace K] [Algebra.IsSeparable K L][Algebra.IsSeparable (IsLocalRing.ResidueField 𝒪[K]) (IsLocalRing.ResidueField 𝒪[L])] :
     ∃ u : ℤ, G(L/K)_[u] = ⊥ := by
   by_cases h : Nontrivial (L ≃ₐ[K] L)
-  · use (WithTop.untop _ (iSup_ne_refl_lowerIndex_ne_top K L) : ℕ) + 1
-    rw [eq_bot_iff]
-    intro s hs
-    rw [Subgroup.mem_bot, AlgEquiv.aut_one, aux7 _ hs]
-    rw [← ENat.some_eq_coe]
-    simp only [WithTop.coe_add, WithTop.coe_untop, WithTop.coe_one, gt_iff_lt]
-    nth_rw 1 [← add_zero (⨆ s : {s : (L ≃ₐ[K] L) // s ≠ .refl}, i_[L/K] s)]
-    have : (0 : ℕ∞) < 1 := by
-      rw [← ENat.coe_one, ← ENat.some_eq_coe, WithTop.coe_pos]
-      exact zero_lt_one
-    convert WithTop.add_lt_add_left (iSup_ne_refl_lowerIndex_ne_top K L) this
+  · let n0 : ℕ := (WithTop.untop _ (iSup_ne_refl_lowerIndex_ne_top K L) : ℕ) + 1
+    use (n0 : ℤ)
+    ext s
+    constructor
+    · intro hs
+      rw [Subgroup.mem_bot]
+      have hu : n0 > ⨆ s : {s : (L ≃ₐ[K] L) // s ≠ .refl}, i_[L/K] s := by
+        have hsup :
+            ⨆ s : {s : (L ≃ₐ[K] L) // s ≠ .refl}, i_[L/K] s =
+              ((WithTop.untop (⨆ s : {s : (L ≃ₐ[K] L) // s ≠ .refl}, i_[L/K] s)
+                (iSup_ne_refl_lowerIndex_ne_top K L) : ℕ) : ℕ∞) := by
+          exact
+            (WithTop.coe_untop
+              (⨆ s : {s : (L ≃ₐ[K] L) // s ≠ .refl}, i_[L/K] s)
+              (iSup_ne_refl_lowerIndex_ne_top K L)).symm
+        have hlt :
+            ((WithTop.untop (⨆ s : {s : (L ≃ₐ[K] L) // s ≠ .refl}, i_[L/K] s)
+              (iSup_ne_refl_lowerIndex_ne_top K L) : ℕ) : ℕ∞) <
+              (((WithTop.untop (⨆ s : {s : (L ≃ₐ[K] L) // s ≠ .refl}, i_[L/K] s)
+                (iSup_ne_refl_lowerIndex_ne_top K L) : ℕ) + 1 : ℕ) : ℕ∞) := by
+          exact WithTop.coe_lt_coe.mpr (Nat.lt_succ_self _)
+        simpa [n0, gt_iff_lt, hsup] using hlt
+      simpa [AlgEquiv.aut_one] using (aux7 (n := n0) hu hs)
+    · intro hs
+      rw [Subgroup.mem_bot] at hs
+      subst hs
+      exact (G(L/K)_[(n0 : ℤ)]).one_mem
   · use 0
-    rw [eq_bot_iff]
-    intro s _
-    rw [Subgroup.mem_bot, AlgEquiv.aut_one]
-    letI : Subsingleton (L ≃ₐ[K] L) := not_nontrivial_iff_subsingleton.mp h
-    apply Subsingleton.allEq
+    ext s
+    constructor
+    · intro _
+      rw [Subgroup.mem_bot, AlgEquiv.aut_one]
+      letI : Subsingleton (L ≃ₐ[K] L) := not_nontrivial_iff_subsingleton.mp h
+      exact Subsingleton.elim s 1
+    · intro hs
+      rw [Subgroup.mem_bot] at hs
+      subst hs
+      exact (G(L/K)_[0]).one_mem
 
 
 end eq_bot

@@ -5,7 +5,7 @@ open QuotientGroup IntermediateField DiscreteValuation Valued Valuation Herbrand
 open MeasureTheory.MeasureSpace
 open Pointwise
 open AlgEquiv AlgHom
-open LocalRing ExtDVR
+open ExtDVR
 open Asymptotics Filter intervalIntegral MeasureTheory Function
 
 variable (K K' L : Type*) {ΓK : outParam Type*} [Field K] [Field K'] [Field L] [vK : Valued K ℤₘ₀] [vK' : Valued K' ℤₘ₀] [vL : Valued L ℤₘ₀] [IsDiscrete vK.v] [IsDiscrete vK'.v] [IsDiscrete vL.v] [Algebra K L] [Algebra K K'] [Algebra K' L] [IsScalarTower K K' L] [IsValExtension vK.v vK'.v] [IsValExtension vK'.v vL.v] [IsValExtension vK.v vL.v] [Normal K K'] [Normal K L] [FiniteDimensional K L] [FiniteDimensional K K'] [FiniteDimensional K' L] [CompleteSpace K] [CompleteSpace K'] [Algebra.IsSeparable K L
@@ -21,13 +21,15 @@ noncomputable def phiDerivReal' (u : ℝ) : ℝ := (Nat.card G(L/K)_[(⌊u⌋ + 
 theorem phiDerivReal'_antitone : Antitone (phiDerivReal' K L) := by
   intro x y hxy
   unfold phiDerivReal'
-  apply (div_le_div_right _).2
-  apply Nat.mono_cast
-  apply Nat.card_mono
-  exact Set.toFinite  (G(L/K)_[(⌊x⌋ + 1)] : Set (L ≃ₐ[K] L))
-  apply lowerRamificationGroup.antitone
-  linarith [Int.floor_le_floor (α := ℝ) hxy]
-  simp only [Nat.cast_pos, Nat.card_pos]
+  have hcard : Nat.card G(L/K)_[(⌊y⌋ + 1)] ≤ Nat.card G(L/K)_[(⌊x⌋ + 1)] := by
+    apply Nat.card_mono
+    · exact Set.toFinite (G(L/K)_[(⌊x⌋ + 1)] : Set (L ≃ₐ[K] L))
+    · apply lowerRamificationGroup.antitone
+      linarith [Int.floor_le_floor hxy]
+  have hcard' : (Nat.card G(L/K)_[(⌊y⌋ + 1)] : ℝ) ≤ (Nat.card G(L/K)_[(⌊x⌋ + 1)] : ℝ) := by
+    exact Nat.cast_le.2 hcard
+  simpa [div_eq_mul_inv] using
+    (mul_le_mul_of_nonneg_right hcard' (show 0 ≤ ((Nat.card G(L/K)_[0] : ℝ)⁻¹) by positivity))
 
 
 theorem phiDerivReal'_eq_phiDerivReal_mul_of {u : ℝ} (h : u = ⌈u⌉) (h' : 0 < u) : phiDerivReal' K L u = phiDerivReal K L u * ((Nat.card G(L/K)_[(⌈u⌉ + 1)] : ℝ) / (Nat.card G(L/K)_[⌈u⌉] : ℝ)) := by
@@ -67,7 +69,7 @@ theorem phiDerivReal'_comp_zero : (phiDerivReal' K' L 0) * (phiDerivReal' K K' (
   unfold phiDerivReal'
   simp only [phiReal_zero_eq_zero, Int.floor_zero, zero_add, ← mul_div_mul_comm]
   congr
-  rw [← Int.ceil_one (α := ℝ), ← RamificationGroup_card_comp_aux K K' L (by linarith), mul_comm, mul_eq_mul_right_iff]
+  rw [← (Int.ceil_one : (⌈(1 : ℝ)⌉ : ℤ) = 1), ← RamificationGroup_card_comp_aux K K' L (x := (1 : ℝ)) (by positivity), mul_comm, mul_eq_mul_right_iff]
   left
   have hp : ⌈phiReal K' L 1⌉ = 1 := by
     apply Int.ceil_eq_iff.2
@@ -79,7 +81,7 @@ theorem phiDerivReal'_comp_zero : (phiDerivReal' K' L 0) * (phiDerivReal' K K' (
   rw [Nat.cast_inj, Nat.card_congr, herbrand_Real K K' L 1 (by linarith), hp]
   simp only [Int.ceil_one]
   exact Equiv.setCongr rfl
-  rw[mul_comm, RamificationGroup_card_zero_comp_aux K K' L]
+  rw [mul_comm, RamificationGroup_card_zero_comp_aux K K' L]
 
 theorem phiDerivReal'_comp {u : ℝ} (h : 0 < u) : (phiDerivReal' K' L u) * phiDerivReal' K K' (phiReal K' L u) = phiDerivReal' K L u := by
   have h' : ∃ v : ℝ, ⌈v⌉ = ⌊u⌋ + 1 ∧ ⌈phiReal K' L v⌉ = ⌊phiReal K' L u⌋ + 1 := by
@@ -105,20 +107,23 @@ theorem phiDerivReal'_comp {u : ℝ} (h : 0 < u) : (phiDerivReal' K' L u) * phiD
             _ ≤ (v - u) * phiDerivReal K' L u := by
               apply phiReal_sub_phiReal_le K' L (le_of_lt (Set.mem_Ioc.1 hv1).1) h
             _ ≤ v - u := by
-              nth_rw 2 [← mul_one (v - u)]
-              rw [mul_le_mul_left]
-              apply phiDerivReal_le_one K' L h
-              apply lt_add_neg_iff_lt.2 (Set.mem_Ioc.1 hv1).1
+              calc
+                (v - u) * phiDerivReal K' L u ≤ (v - u) * 1 := by
+                  apply mul_le_mul_of_nonneg_left (phiDerivReal_le_one K' L h)
+                  linarith [le_of_lt (Set.mem_Ioc.1 hv1).1]
+                _ = v - u := by ring
             _ ≤ _ := by
               rw [← sub_eq_add_neg, tsub_le_iff_left]
               convert (Set.mem_Ioc.1 hv2).2 using 1
               simp only [Int.cast_add, Int.cast_one, add_assoc, add_sub_assoc]
   obtain ⟨v, hv1, hv2⟩ := h'
   have hv : 0 ≤ v := by
-    apply le_of_lt
-    rw [← Int.ceil_pos, hv1]
-    have : 0 ≤ ⌊u⌋ := Int.floor_nonneg.mpr (le_of_lt h)
-    linarith
+    have hv_pos : 0 < v := by
+      apply (Int.ceil_pos).1
+      rw [hv1]
+      have hu_floor : 0 ≤ ⌊u⌋ := Int.floor_nonneg.mpr (le_of_lt h)
+      linarith
+    exact le_of_lt hv_pos
   obtain hcm := phiDerivReal_comp K K' L hv
   unfold phiDerivReal at hcm
   rw [max_eq_right, max_eq_right] at hcm
@@ -190,59 +195,57 @@ theorem phiReal_sub_phiReal_le' {u v : ℝ} (h : u ≤ v) (h': 0 < u) : phiReal 
       simp only [Finset.mem_union, Finset.mem_Icc]
       constructor
       <;> intro hx
-      · by_cases hc : x ≤ ⌊u⌋
+      · by_cases hc' : x ≤ ⌊u⌋
         · left
-          refine ⟨hx.1, hc⟩
+          refine ⟨hx.1, hc'⟩
         · right
           constructor
-          · push_neg at hc
+          · push_neg at hc'
             apply Int.le_of_sub_one_lt
             rw [add_sub_cancel_right]
-            exact hc
+            exact hc'
           · exact hx.2
       · match hx with
         | Or.inl hx => refine ⟨hx.1, le_trans hx.2 (Int.floor_le_floor h)⟩
-        | Or.inr hx => refine ⟨le_trans ?_ hx.1, hx.2⟩
-                       simp only [le_add_iff_nonneg_left]
-                       apply Int.floor_nonneg.2 (le_of_lt h')
-    rw [phiReal_eq_sum_card' K L h', phiReal_eq_sum_card', phiDerivReal', ← mul_sub, one_div_mul_eq_div, ← mul_div_assoc, div_le_div_right, ← sub_sub, add_sub_right_comm, add_sub_assoc, h1, Finset.sum_union, Nat.cast_add, add_sub_cancel_left, max_eq_right, max_eq_right]
+        | Or.inr hx =>
+            refine ⟨le_trans ?_ hx.1, hx.2⟩
+            simp only [le_add_iff_nonneg_left]
+            apply Int.floor_nonneg.2 (le_of_lt h')
+    rw [phiReal_eq_sum_card' K L h', phiReal_eq_sum_card', phiDerivReal', ← mul_sub, one_div, inv_mul_eq_div, ← mul_div_assoc, div_le_div_iff_of_pos_right, ← sub_sub, add_sub_right_comm, add_sub_assoc, h1, Finset.sum_union, Nat.cast_add, add_sub_cancel_left, max_eq_right, max_eq_right]
     calc
       _ ≤ ∑ x ∈ Finset.Icc (⌊u⌋ + 1) ⌊v⌋, Nat.card G(L/K)_[(⌊u⌋ + 1)] + ((v - ↑⌊v⌋) * ↑(Nat.card ↥ G(L/K)_[(⌊v⌋ + 1)] ) - (u - ↑⌊u⌋) * ↑(Nat.card ↥ G(L/K)_[(⌊u⌋ + 1)])) := by
-        simp only [Int.cast_sub, Int.cast_one, add_le_add_iff_right, Nat.cast_le]
+        simp only [add_le_add_iff_right, Nat.cast_le]
         apply Finset.sum_le_sum
         intro i hi
         apply Nat.card_mono
-        exact Set.toFinite (G(L/K)_[(⌊u⌋ + 1)] : Set (L ≃ₐ[K] L))
-        apply lowerRamificationGroup.antitone K L (Finset.mem_Icc.1 hi).1
+        · exact Set.toFinite (G(L/K)_[(⌊u⌋ + 1)] : Set (L ≃ₐ[K] L))
+        · apply lowerRamificationGroup.antitone K L (Finset.mem_Icc.1 hi).1
       _ ≤  ∑ x ∈ Finset.Icc (⌊u⌋ + 1) ⌊v⌋, Nat.card G(L/K)_[(⌊u⌋ + 1)] + ((v - ↑⌊v⌋) * ↑(Nat.card ↥ G(L/K)_[(⌊u⌋ + 1)] ) - (u - ↑⌊u⌋) * ↑(Nat.card ↥ G(L/K)_[(⌊u⌋ + 1)])) := by
         simp only [add_le_add_iff_left, sub_eq_add_neg (b := (u - ↑⌊u⌋) * ↑(Nat.card ↥ G(L/K)_[(⌊u⌋ + 1)])), add_le_add_iff_right]
-        by_cases hc : ⌊v⌋ = v
-        · simp only [hc, sub_self, zero_mul, le_refl]
-        · rw [mul_le_mul_left, Nat.cast_le]
-          apply Nat.card_mono
-          exact Set.toFinite (G(L/K)_[(⌊u⌋ + 1)] : Set (L ≃ₐ[K] L))
-          apply lowerRamificationGroup.antitone K L
-          linarith [Int.floor_le_floor h]
-          rw [sub_pos]
-          exact lt_of_le_of_ne (Int.floor_le v) hc
+        by_cases hfloorv : ⌊v⌋ = v
+        · simp only [hfloorv, sub_self, zero_mul, le_rfl]
+        · have hcard : (Nat.card G(L/K)_[(⌊v⌋ + 1)] : ℝ) ≤ (Nat.card G(L/K)_[(⌊u⌋ + 1)] : ℝ) := by
+            exact Nat.cast_le.2 <| by
+              apply Nat.card_mono
+              · exact Set.toFinite (G(L/K)_[(⌊u⌋ + 1)] : Set (L ≃ₐ[K] L))
+              · apply lowerRamificationGroup.antitone K L
+                linarith [Int.floor_le_floor h]
+          exact mul_le_mul_of_nonneg_left hcard (sub_nonneg.2 (Int.floor_le v))
       _ ≤ _ := by
         simp only [Finset.sum_const, Int.card_Icc, sub_add_cancel, smul_eq_mul, Nat.cast_mul]
         rw [← Int.cast_natCast, Int.toNat_of_nonneg, ← sub_mul, ← add_mul, Int.cast_sub]
-        have h1 : (↑(⌊v⌋ + 1) - ↑(⌊u⌋ + 1) + (v - ↑⌊v⌋ - (u - ↑⌊u⌋))) = v - u := by
+        have haux : (↑(⌊v⌋ + 1) - ↑(⌊u⌋ + 1) + (v - ↑⌊v⌋ - (u - ↑⌊u⌋))) = v - u := by
           simp only [Int.cast_add, Int.cast_one]
           ring
-        by_cases hc : u = v
-        · simp only [hc, Int.cast_add, Int.cast_one, sub_self, Int.self_sub_floor, add_zero, zero_mul, le_refl]
-        · rw [h1, mul_le_mul_left]
-          rw [sub_pos]
-          apply lt_of_le_of_ne h hc
-        simp only [add_sub_add_right_eq_sub, sub_nonneg]
-        apply Int.floor_le_floor h
+        by_cases huv : u = v
+        · simp only [huv, Int.cast_add, Int.cast_one, sub_self, Int.self_sub_floor, add_zero, zero_mul, le_rfl]
+        · rw [haux]
+        exact sub_nonneg.mpr (by linarith [Int.floor_le_floor h])
     exact Int.floor_nonneg.2 (le_of_lt h')
     exact Int.floor_nonneg.2 (le_of_lt (lt_of_lt_of_le h' h))
-    have h1 : Finset.Icc 1 ⌊u⌋ = Finset.Ico 1 (⌊u⌋ + 1) := rfl
-    have h2 : Finset.Icc (⌊u⌋ + 1) ⌊v⌋ = Finset.Ico (⌊u⌋ + 1) (⌊v⌋ + 1) := rfl
-    rw [h1, h2]
+    have hIcc : Finset.Icc 1 ⌊u⌋ = Finset.Ico 1 (⌊u⌋ + 1) := rfl
+    have hIcc' : Finset.Icc (⌊u⌋ + 1) ⌊v⌋ = Finset.Ico (⌊u⌋ + 1) (⌊v⌋ + 1) := rfl
+    rw [hIcc, hIcc']
     apply Finset.Ico_disjoint_Ico_consecutive
     simp only [Nat.cast_pos, Nat.card_pos]
     apply lt_of_lt_of_le h' h
@@ -257,16 +260,23 @@ theorem le_phiReal_sub_phiReal' {u v : ℝ} (h : u ≤ v) (h' : 0 < u) : (v - u)
     rw [phiDerivReal'_eq_phiDerivReal_mul_of K L hc]
     calc
       _ ≤  (v - u) * (phiDerivReal K L v) := by
-        by_cases hc : u < v
-        · rw [← mul_one ((v - u) * (phiDerivReal K L v)), ← mul_assoc, mul_le_mul_left, div_le_one ,Nat.cast_le]
-          apply Nat.card_mono
-          exact Set.toFinite (G(L/K)_[⌈v⌉] : Set (L ≃ₐ[K] L))
-          apply lowerRamificationGroup.antitone
-          linarith
-          simp only [Nat.cast_pos, Nat.card_pos]
-          apply mul_pos (by linarith [hc])
-          apply phiDerivReal_pos K L
-        · have heq : u = v := eq_of_le_of_not_lt h hc
+        by_cases huv : u < v
+        · calc
+            (v - u) * (phiDerivReal K L v * ((Nat.card G(L/K)_[(⌈v⌉ + 1)] : ℝ) / (Nat.card G(L/K)_[⌈v⌉] : ℝ)))
+                ≤ (v - u) * (phiDerivReal K L v * 1) := by
+                  apply mul_le_mul_of_nonneg_left
+                  · apply mul_le_mul_of_nonneg_left
+                    · exact (div_le_one (show 0 < (Nat.card G(L/K)_[⌈v⌉] : ℝ) by
+                        simp only [Nat.cast_pos, Nat.card_pos])).2 <| by
+                        exact Nat.cast_le.2 <| by
+                          apply Nat.card_mono
+                          · exact Set.toFinite (G(L/K)_[⌈v⌉] : Set (L ≃ₐ[K] L))
+                          · apply lowerRamificationGroup.antitone
+                            linarith
+                    · exact le_of_lt (phiDerivReal_pos K L)
+                  · linarith [le_of_lt huv]
+            _ = (v - u) * phiDerivReal K L v := by ring
+        · have heq : u = v := eq_of_le_of_not_lt h huv
           simp only [heq, sub_self, zero_mul, le_refl]
       _ ≤ _ := by
         apply le_phiReal_sub_phiReal K L h h'
@@ -505,12 +515,10 @@ instance : Finite (L ≃ₐ[K'] L) := Finite.algEquiv
 
 @[simp]
 theorem psi_comp_of_isValExtension : (psi K' L) ∘ (psi K K') = psi K L := by
-  unfold psi
-  have hcomp : invFun (phi K' L) ∘ invFun (phi K K') ∘ (phi K K') ∘ (phi K' L) = invFun (phi K L) ∘ (phi K K') ∘ (phi K' L) := by
-    nth_rw 2 [phi_comp_of_isValExtension]
-    rw [invFun_comp (phi_Bijective_aux K L).injective, ← comp.assoc (invFun (phi K K')) (phi K K') (phi K' L), invFun_comp (phi_Bijective_aux K K').injective, id_comp, invFun_comp (phi_Bijective_aux K' L).injective]
-  simp [Function.comp_left_cancel (phi_Bijective_aux K' L)] at hcomp
-  apply Function.comp_left_cancel (phi_Bijective_aux K L) hcomp
+  ext v
+  apply (phi_Bijective_aux K L).injective
+  have hcomp := congrArg (fun f => f ((psi K' L) ((psi K K') v))) (phi_comp_of_isValExtension K K' L)
+  simpa [Function.comp_apply] using hcomp.symm
 
 @[simp]
 theorem psi_comp_of_isValExtension' (v : ℚ) : (psi K' L) ((psi K K') v) = psi K L v := by

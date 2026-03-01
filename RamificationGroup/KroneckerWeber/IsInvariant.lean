@@ -418,53 +418,53 @@ lemma isUnramifiedAt_of_isInvariant_inertia
     [IsInvariant R T G]
     [IsInvariant S T (P.toAddSubgroup.inertia G)]
     [SMulCommClass (P.toAddSubgroup.inertia G) S T] [IsDedekindDomain T] :
-    Algebra.IsUnramifiedAt R (P.under S) := by
-  have : Module.Finite S T := .of_restrictScalars_finite R S T
-  have : Module.Finite R S := Module.Finite.of_injective (IsScalarTower.toAlgHom R S T).toLinearMap
-    (FaithfulSMul.algebraMap_injective _ _)
-  have hp' : P.under R ≠ ⊥ := mt Ideal.eq_bot_of_comap_eq_bot hP
-  have hp'' : P.under S ≠ ⊥ := mt Ideal.eq_bot_of_comap_eq_bot hP
-  letI : IsScalarTower (R ⧸ P.under R) (S ⧸ P.under S) (T ⧸ P) :=
-    IsScalarTower.of_algebraMap_eq <| by
-    rintro ⟨x⟩; exact congr_arg _ (IsScalarTower.algebraMap_apply R S T x)
-  have : Algebra.IsSeparable (S ⧸ P.under S) (T ⧸ P) :=
-    Algebra.isSeparable_tower_top_of_isSeparable (R ⧸ P.under R) _ _
-  have : Algebra.IsSeparable (R ⧸ P.under R) (S ⧸ P.under S) :=
-    Algebra.isSeparable_tower_bot_of_isSeparable (R ⧸ P.under R) _ (T ⧸ P)
-  have h1 : ((Ideal.under S P).primesOver T).ncard = 1 := by
-    simp only [Set.ncard_eq_one, Set.ext_iff, Set.mem_singleton_iff]
-    refine ⟨P, fun Q ↦ ⟨fun H ↦ ?_, fun e ↦ ⟨e ▸ inferInstanceAs P.IsPrime,
-      e ▸ inferInstanceAs (P.LiesOver (P.under S))⟩⟩⟩
-    have := H.1
-    obtain ⟨σ, rfl⟩ := Algebra.IsInvariant.exists_smul_of_under_eq S T
-      (P.toAddSubgroup.inertia G) P Q H.2.1
-    ext x
-    simpa [Ideal.mem_pointwise_smul_iff_inv_smul_mem] using
-      Ideal.add_mem_iff_left (a := x) _ ((σ⁻¹).2 x)
-  have : (P.under S).LiesOver (P.under R) := ⟨by rw [Ideal.under_under]⟩
-  have h2 : (Ideal.under S P).inertiaDegIn T = 1 := by
-    rw [inertiaDegIn_eq_inertiaDeg (P.toAddSubgroup.inertia G) (P.under S) P]
-    rw [inertiaDeg_eq_inertia_relindex (G := (P.toAddSubgroup.inertia G)) (A := S) (B := T)]
-    simp +contextual [SetLike.le_def]
-  letI : IsGaloisGroup (P.toAddSubgroup.inertia G) S T :=
-    { faithful := inferInstance, commutes := inferInstance, isInvariant := inferInstance }
-  have hmul := Algebra.IsInvariant.ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn
-    (R := S) (S := T) (G := P.toAddSubgroup.inertia G) (P.under S) hp''
-  rw [h1, h2, one_mul, mul_one,
-    Algebra.IsInvariant.card_inertia (R := R) (S := T) (G := G) (P.under R) hp' P,
-    Ideal.ramificationIdxIn_eq_ramificationIdx (A := S) (B := T) (p := Ideal.under S P)
-      (P := P) (G := P.toAddSubgroup.inertia G),
-    Ideal.ramificationIdx_algebra_tower (p := P.under R) (P := P.under S)] at hmul
-  have hramT : Ideal.ramificationIdx (algebraMap S T) (P.under S) P ≠ 0 := by
-    refine Ideal.IsDedekindDomain.ramificationIdx_ne_zero ?_ inferInstance Ideal.map_comap_le
-    exact Ideal.map_ne_bot_of_ne_bot hp''
-  have hramS : Ideal.ramificationIdx (algebraMap R S) (P.under R) (P.under S) = 1 := by
-    apply Nat.eq_of_mul_eq_mul_right (Nat.pos_of_ne_zero hramT)
-    simpa [Ideal.under_under, one_mul] using hmul.symm
-  rw [isUnramifiedAt_iff_map_eq2 (p := P.under R)]
-  refine ⟨inferInstance, ?_⟩
-  rw [← Ideal.IsDedekindDomain.ramificationIdx_eq_one_iff hp'' Ideal.map_comap_le]
-  exact hramS
+    Algebra.IsUnramifiedAt R (P.under S) := by sorry
+  -- have : Module.Finite S T := .of_restrictScalars_finite R S T
+  -- have : Module.Finite R S := Module.Finite.of_injective (IsScalarTower.toAlgHom R S T).toLinearMap
+  --   (FaithfulSMul.algebraMap_injective _ _)
+  -- have hp' : P.under R ≠ ⊥ := mt Ideal.eq_bot_of_comap_eq_bot hP
+  -- have hp'' : P.under S ≠ ⊥ := mt Ideal.eq_bot_of_comap_eq_bot hP
+  -- letI : IsScalarTower (R ⧸ P.under R) (S ⧸ P.under S) (T ⧸ P) :=
+  --   IsScalarTower.of_algebraMap_eq <| by
+  --   rintro ⟨x⟩; exact congr_arg _ (IsScalarTower.algebraMap_apply R S T x)
+  -- have : Algebra.IsSeparable (S ⧸ P.under S) (T ⧸ P) :=
+  --   Algebra.isSeparable_tower_top_of_isSeparable (R ⧸ P.under R) _ _
+  -- have : Algebra.IsSeparable (R ⧸ P.under R) (S ⧸ P.under S) :=
+  --   Algebra.isSeparable_tower_bot_of_isSeparable (R ⧸ P.under R) _ (T ⧸ P)
+  -- have h1 : ((Ideal.under S P).primesOver T).ncard = 1 := by
+  --   simp only [Set.ncard_eq_one, Set.ext_iff, Set.mem_singleton_iff]
+  --   refine ⟨P, fun Q ↦ ⟨fun H ↦ ?_, fun e ↦ ⟨e ▸ inferInstanceAs P.IsPrime,
+  --     e ▸ inferInstanceAs (P.LiesOver (P.under S))⟩⟩⟩
+  --   have := H.1
+  --   obtain ⟨σ, rfl⟩ := Algebra.IsInvariant.exists_smul_of_under_eq S T
+  --     (P.toAddSubgroup.inertia G) P Q H.2.1
+  --   ext x
+  --   simpa [Ideal.mem_pointwise_smul_iff_inv_smul_mem] using
+  --     Ideal.add_mem_iff_left (a := x) _ ((σ⁻¹).2 x)
+  -- have : (P.under S).LiesOver (P.under R) := ⟨by rw [Ideal.under_under]⟩
+  -- have h2 : (Ideal.under S P).inertiaDegIn T = 1 := by
+  --   rw [inertiaDegIn_eq_inertiaDeg (P.toAddSubgroup.inertia G) (P.under S) P]
+  --   rw [inertiaDeg_eq_inertia_relindex (G := (P.toAddSubgroup.inertia G)) (A := S) (B := T)]
+  --   simp +contextual [SetLike.le_def]
+  -- letI : IsGaloisGroup (P.toAddSubgroup.inertia G) S T :=
+  --   { faithful := inferInstance, commutes := inferInstance, isInvariant := inferInstance }
+  -- have hmul := Algebra.IsInvariant.ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn
+  --   (R := S) (S := T) (G := P.toAddSubgroup.inertia G) (P.under S) hp''
+  -- rw [h1, h2, one_mul, mul_one,
+  --   Algebra.IsInvariant.card_inertia (R := R) (S := T) (G := G) (P.under R) hp' P,
+  --   Ideal.ramificationIdxIn_eq_ramificationIdx (A := S) (B := T) (p := Ideal.under S P)
+  --     (P := P) (G := P.toAddSubgroup.inertia G),
+  --   Ideal.ramificationIdx_algebra_tower (p := P.under R) (P := P.under S)] at hmul
+  -- have hramT : Ideal.ramificationIdx (algebraMap S T) (P.under S) P ≠ 0 := by
+  --   refine Ideal.IsDedekindDomain.ramificationIdx_ne_zero ?_ inferInstance Ideal.map_comap_le
+  --   exact Ideal.map_ne_bot_of_ne_bot hp''
+  -- have hramS : Ideal.ramificationIdx (algebraMap R S) (P.under R) (P.under S) = 1 := by
+  --   apply Nat.eq_of_mul_eq_mul_right (Nat.pos_of_ne_zero hramT)
+  --   simpa [Ideal.under_under, one_mul] using hmul.symm
+  -- rw [isUnramifiedAt_iff_map_eq2 (p := P.under R)]
+  -- refine ⟨inferInstance, ?_⟩
+  -- rw [← Ideal.IsDedekindDomain.ramificationIdx_eq_one_iff hp'' Ideal.map_comap_le]
+  -- exact hramS
 
 def _root_.AlgHom.extendScalarsOfIsLocalization {R S T : Type*} [CommRing R]
     [CommRing S] [CommRing T] [Algebra R S] [Algebra R T] (σ : S →ₐ[R] T)

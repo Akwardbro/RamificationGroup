@@ -5,7 +5,7 @@ open scoped Classical
 open HerbrandFunction DiscreteValuation AlgEquiv Valued
 open DiscreteValuation Subgroup Set Function Finset BigOperators Int Valued
 
-variable (K L : Type*) [Field K] [Field L] [Algebra K L] [FiniteDimensional K L] [vK : Valued K ℤₘ₀] [Valuation.IsDiscrete vK.v] [vL : Valued L ℤₘ₀] [Valuation.IsDiscrete vL.v] [IsValExtension vK.v vL.v] [CompleteSpace K] [Algebra.IsSeparable K L]
+variable (K L : Type*) [Field K] [Field L] [Algebra K L] [FiniteDimensional K L] [vK : Valued K ℤₘ₀] [DiscreteValuation.IsDiscrete vK.v] [vL : Valued L ℤₘ₀] [DiscreteValuation.IsDiscrete vL.v] [IsValExtension vK.v vL.v] [CompleteSpace K] [Algebra.IsSeparable K L]
 [Algebra.IsSeparable (IsLocalRing.ResidueField ↥𝒪[K]) (IsLocalRing.ResidueField ↥𝒪[L])]
 
 variable (R S : Type*) {ΓR : outParam Type*} [CommRing R] [Ring S] [LinearOrderedCommGroupWithZero ΓR] [vR : Valued R ΓR] [vS : Valued S ℤₘ₀] [Algebra R S]
@@ -16,7 +16,6 @@ theorem aux {n : ℤ} (hn : 1 ≤ n): (∑ x ∈ Finset.Icc 1 (⌈(n : ℚ) + 1�
   simp only [Nat.card_eq_fintype_card, add_tsub_cancel_left]
 
 
-#check Nat.Icc_insert_succ_right
 theorem phi_linear_section_aux {n : ℤ} {x : ℚ} (hx : n ≤ x ∧ x < n + 1) : phi K L x = phi K L n + (phi K L (n + 1) - phi K L n) * (x - n) := by
   by_cases hc : 0 < x
   · have hn : (0 : ℚ) ≤ n := by
@@ -27,8 +26,7 @@ theorem phi_linear_section_aux {n : ℤ} {x : ℚ} (hx : n ≤ x ∧ x < n + 1) 
         apply Int.le_sub_one_of_lt hcon
       have hx : x < 0 := by
         apply lt_of_lt_of_le hx.2
-        rw [← Int.cast_one (R := ℚ), ← cast_add, ← cast_zero, cast_le]
-        exact hcon'
+        exact_mod_cast hcon'
       absurd hc; linarith [hx]
     by_cases hc' : (0 : ℚ) < n
     · rw [phi_eq_sum_card K L hc]
@@ -62,9 +60,10 @@ theorem phi_linear_section_aux {n : ℤ} {x : ℚ} (hx : n ≤ x ∧ x < n + 1) 
           _ = (1 / Nat.card G(L/K)_[0]) * (Nat.card G(L/K)_[(n + 1)]) * (x - n) := by
             simp only [ceil_add_one, ceil_intCast, add_sub_cancel_right, cast_max, cast_zero, cast_sub, cast_one, max_eq_right hn]
             have hn' : 0 ≤ (n : ℚ) - 1 := by
-              rw [← cast_zero, ← cast_one, ← cast_sub, cast_le]
-              apply Int.le_sub_one_of_lt
-              apply_mod_cast hc'
+              have hnint : 0 ≤ n - 1 := by
+                apply Int.le_sub_one_of_lt
+                exact_mod_cast hc'
+              exact_mod_cast hnint
             simp only [Nat.card_eq_fintype_card, one_div, max_eq_right hn', sub_sub_cancel, one_mul,add_sub_cancel]
             ring
           _ = _ := by
@@ -78,9 +77,10 @@ theorem phi_linear_section_aux {n : ℤ} {x : ℚ} (hx : n ≤ x ∧ x < n + 1) 
               apply le_of_lt hc'
             have aux₂: max 0 (n - 1 : ℚ) = n - 1 := by
               apply max_eq_right
-              rw [← cast_zero, ← cast_one, ← cast_sub, cast_le]
-              apply Int.le_sub_one_of_lt
-              apply_mod_cast hc'
+              have hnint : 0 ≤ n - 1 := by
+                apply Int.le_sub_one_of_lt
+                exact_mod_cast hc'
+              exact_mod_cast hnint
             rw [aux₁, aux₂, ← sum_insert_right_aux'' 1 n ?_ (fun x => (Nat.card G(L/K)_[x] : ℚ))]
             simp only [Nat.card_eq_fintype_card, add_sub_cancel_left, one_mul, sub_sub_cancel, sub_add_cancel]
             apply Int.le_of_sub_one_lt
@@ -119,13 +119,10 @@ theorem phi_linear_section_aux {n : ℤ} {x : ℚ} (hx : n ≤ x ∧ x < n + 1) 
           apply_mod_cast hx.2
       rw [hn, cast_zero, phi_zero_eq_zero K L, zero_add, zero_add, hc']; ring
     · have hn : ((n : ℚ) + 1) ≤ 0 := by
-        rw [← cast_one, ← cast_add, ← cast_zero, cast_le, ← sub_self 1]
-        apply Int.le_sub_one_of_lt
-        simp only [add_lt_iff_neg_right]
-        rw [← cast_lt (R := ℚ)]
-        apply lt_of_le_of_lt (b := x)
-        exact hx.1
-        apply lt_of_le_of_ne hc hc'
+        have hxneg : x < 0 := lt_of_le_of_ne hc hc'
+        have hnneg : (n : ℚ) < 0 := lt_of_le_of_lt hx.1 hxneg
+        have hnint : n + 1 ≤ 0 := Int.add_one_le_iff.mpr (by exact_mod_cast hnneg)
+        exact_mod_cast hnint
       have hn' : (n : ℚ) ≤ 0 := by linarith [hn]
       rw [phi_eq_self_of_le_zero K L hn, phi_eq_self_of_le_zero K L hn']; ring
 
@@ -176,26 +173,29 @@ theorem id_le_phi {x : ℚ} (hx : 0 < x) : (1 / Nat.card G(L/K)_[0]) * x ≤ phi
       <;> linarith [hxc]
       simp only [one_div, inv_pos, Nat.cast_pos]
       apply Ramification_Group_card_pos K L (u := 0)
-    · apply (mul_le_mul_left ?_).2
-      apply Rat.add_le_add_left.2
-      apply (mul_le_mul_left ?_).2
-      rw [← Nat.cast_one, Nat.cast_le]
+    · apply mul_le_mul_of_nonneg_left
+      · apply Rat.add_le_add_left.2
+        apply mul_le_mul_of_nonneg_left
+        · rw [← Nat.cast_one, Nat.cast_le]
+          apply card_of_Ramigroup_gt_one
+        · apply le_of_lt
+          simp only [cast_max, cast_zero, cast_sub, cast_one, sub_pos, max_lt_iff]
+          constructor
+          · exact hx
+          · linarith [Int.ceil_lt_add_one x]
+      · apply le_of_lt
+        refine one_div_pos.mpr ?_
+        simp only [Nat.cast_pos]
+        apply Ramification_Group_card_pos K L (u := 0)
+  · apply mul_le_mul_of_nonneg_left
+    · rw [add_le_add_iff_right, Nat.cast_le]
+      apply Finset.sum_le_sum
+      intro i _
       apply card_of_Ramigroup_gt_one
-      simp only [cast_max, cast_zero, cast_sub, cast_one, sub_pos, max_lt_iff]
-      constructor
-      · exact hx
-      · linarith [Int.ceil_lt_add_one x]
+    · apply le_of_lt
       refine one_div_pos.mpr ?_
       simp only [Nat.cast_pos]
       apply Ramification_Group_card_pos K L (u := 0)
-  · apply (mul_le_mul_left ?_).2
-    rw [add_le_add_iff_right, Nat.cast_le]
-    apply Finset.sum_le_sum
-    intro i _
-    apply card_of_Ramigroup_gt_one
-    refine one_div_pos.mpr ?_
-    simp only [Nat.cast_pos]
-    apply Ramification_Group_card_pos K L (u := 0)
 
 theorem phi_infty_up_aux {x : ℚ} : ∃ y, x ≤ phi K L y := by
   by_cases hc : 0 < x

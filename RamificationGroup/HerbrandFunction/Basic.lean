@@ -145,19 +145,21 @@ theorem phi_strictMono_of_gt_one {a b : ℚ} (ha : 0 < a) (hb : 1 < b) (hab : a 
   by_cases hceil : ⌈a⌉ = ⌈b⌉
   · simp only [hceil, phiDeriv_eq_ceil, ceil_intCast, cast_max, cast_zero, cast_sub, cast_one,
     add_lt_add_iff_left]
-    apply (mul_lt_mul_right (by apply phiDeriv_pos R S)).2
-    simp only [sub_lt_sub_iff_right, hab]
+    refine mul_lt_mul_of_pos_right ?_ (phiDeriv_pos R S _)
+    simpa only [sub_lt_sub_iff_right] using hab
   · calc
       _ ≤ ∑ x ∈ Finset.Icc 1 ⌈a⌉, phiDeriv R S x := by
-        apply le_trans (b := ∑x in Finset.Icc 1 (⌈a⌉ - 1), phiDeriv R S ↑x + 1 * phiDeriv R S ⌈a⌉)
+        apply le_trans (b := ∑ x ∈ Finset.Icc 1 (⌈a⌉ - 1), phiDeriv R S ↑x + 1 * phiDeriv R S ⌈a⌉)
         rw [phiDeriv_eq_ceil R S]
-        apply add_le_add_left
-        apply (mul_le_mul_right (by apply phiDeriv_pos R S)).2
-        have : a - 1 ≤ (max 0 (⌈a⌉ - 1)) := by
-          simp only [cast_max, cast_zero, cast_sub, cast_one, le_max_iff, tsub_le_iff_right,
-            zero_add, sub_add_cancel]
-          right; apply le_ceil
-        linarith [this]
+        have hmul : (a - ↑(max 0 (⌈a⌉ - 1))) * phiDeriv R S ↑⌈a⌉ ≤ 1 * phiDeriv R S ↑⌈a⌉ := by
+          refine mul_le_mul_of_nonneg_right ?_ (le_of_lt (phiDeriv_pos R S _))
+          have : a - 1 ≤ (max 0 (⌈a⌉ - 1)) := by
+            simp only [cast_max, cast_zero, cast_sub, cast_one, le_max_iff, tsub_le_iff_right,
+              zero_add, sub_add_cancel]
+            right; apply le_ceil
+          linarith [this]
+        have hsum := add_le_add_left hmul (∑ x ∈ Finset.Icc 1 (⌈a⌉ - 1), phiDeriv R S ↑x)
+        simpa [add_comm, add_left_comm, add_assoc] using hsum
         have h : ∑ x ∈ Finset.Icc 1 (⌈a⌉ - 1), phiDeriv R S x + 1 * phiDeriv R S ⌈a⌉ = ∑ x ∈ Finset.Icc 1 ⌈a⌉, phiDeriv R S x := by
             have h' : ∑ x ∈ Finset.Icc 1 ⌈a⌉, phiDeriv R S x - 1 * phiDeriv R S ⌈a⌉ = ∑ x ∈ Finset.Icc 1 (⌈a⌉ - 1), phiDeriv R S x := by
               by_cases hc : 1 ≤ a
@@ -210,16 +212,15 @@ theorem phi_strictMono : StrictMono (phi R S) := by
       apply ceil_eq_iff.2
       simp only [cast_one, sub_self, ha0, ha1, and_self]
     · by_cases hb1 : b ≤ 1
-      · push_neg at *
-        have hbc : ⌈b⌉ = 1 := by
+      · have hbc : ⌈b⌉ = 1 := by
           apply ceil_eq_iff.2
           simp only [cast_one, sub_self, lt_trans ha0 h, hb1, and_self]
         have hceil : ⌈a⌉ = ⌈b⌉ := by simp [hac, hbc]
         have hderiv : phiDeriv R S a = phiDeriv R S b := by
           unfold phiDeriv
-          simp only [hceil, one_div]
+          simp only [hceil]
         rw [phi_of_pos_of_le_one R S ha0 ha1, phi_of_pos_of_le_one R S (by linarith) hb1]
         simp only [hderiv, gt_iff_lt]
-        apply (mul_lt_mul_right (by apply phiDeriv_pos R S)).2 h
+        exact mul_lt_mul_of_pos_right h (phiDeriv_pos R S _)
       · apply phi_strictMono_of_gt_one R S (by linarith) (by linarith) h
     apply phi_strictMono_of_gt_one R S (by linarith) (by linarith) h

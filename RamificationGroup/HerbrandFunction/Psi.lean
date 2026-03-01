@@ -8,7 +8,7 @@ variable (R S : Type*) {ΓR : outParam Type*} [CommRing R] [Ring S] [LinearOrder
 noncomputable def psi : ℚ → ℚ :=
   invFun (phi R S)
 
-variable (K L : Type*) [Field K] [Field L] [Algebra K L] [FiniteDimensional K L] [vK : Valued K ℤₘ₀] [Valuation.IsDiscrete vK.v] [vL : Valued L ℤₘ₀] [Valuation.IsDiscrete vL.v] [IsValExtension vK.v vL.v] [CompleteSpace K] [Algebra.IsSeparable K L]
+variable (K L : Type*) [Field K] [Field L] [Algebra K L] [FiniteDimensional K L] [vK : Valued K ℤₘ₀] [DiscreteValuation.IsDiscrete vK.v] [vL : Valued L ℤₘ₀] [DiscreteValuation.IsDiscrete vL.v] [IsValExtension vK.v vL.v] [CompleteSpace K] [Algebra.IsSeparable K L]
 [Algebra.IsSeparable (IsLocalRing.ResidueField ↥𝒪[K]) (IsLocalRing.ResidueField ↥𝒪[L])]
 
 theorem psi_bij : Function.Bijective (psi K L) := by
